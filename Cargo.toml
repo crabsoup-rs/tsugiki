@@ -19,11 +19,11 @@ name = "main_bench"
 harness = false
 
 [dependencies]
-cssparser = "0.34"
+cssparser = "0.35"
 html5ever = "0.35"
 indexmap = "2.2.6"
 precomputed-hash = "0.1.1"
-selectors = "0.26"
+selectors = "0.30"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
