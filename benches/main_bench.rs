@@ -46,6 +46,7 @@ const SELECTORS: &[&str] = &[
     "p + p",
     "p:nth-child(4n+1)",
     "p:nth-of-type(4n+1)",
+    ".trait,.mw-cite-backlink"
 ];
 
 fn criterion_benchmark(c: &mut Criterion) {
