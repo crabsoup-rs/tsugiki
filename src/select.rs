@@ -8,14 +8,17 @@ use crate::node_data_ref::NodeDataRef;
 use crate::tree::{ElementData, Node, NodeData, NodeRef};
 use cssparser::{self, CowRcStr, ParseError, SourceLocation, ToCss};
 use html5ever::{LocalName, Namespace};
+use precomputed_hash::PrecomputedHash;
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
-use selectors::context::{IgnoreNthChildForInvalidation, NeedsSelectorFlags, QuirksMode};
-use selectors::matching::ElementSelectorFlags;
+use selectors::bloom::BloomFilter;
+use selectors::context::{MatchingForInvalidation, NeedsSelectorFlags, QuirksMode};
+use selectors::matching::{ElementSelectorFlags, SelectorCaches};
 use selectors::parser::{
     NonTSPseudoClass, Parser, Selector as GenericSelector, SelectorImpl, SelectorList,
 };
 use selectors::parser::{ParseRelative, SelectorParseErrorKind};
-use selectors::{self, matching, NthIndexCache, OpaqueElement};
+use selectors::{self, matching, OpaqueElement};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::{fmt, fmt::Write, ops::Deref};
 
 /// The definition of whitespace per CSS Selectors Level 3 § 4.
@@ -51,24 +54,43 @@ impl Deref for CssString {
 }
 
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Default)]
-pub struct CssLocalName(pub LocalName);
+pub struct CssLocalName {
+    name: LocalName,
+    precomputed_hash: u32,
+}
+impl CssLocalName {
+    pub fn new(name: LocalName) -> Self {
+        let mut hasher = DefaultHasher::new();
+        name.hash(&mut hasher);
+        let precomputed_hash = hasher.finish() as u32;
+        CssLocalName {
+            name,
+            precomputed_hash,
+        }
+    }
+}
 impl ToCss for CssLocalName {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result
     where
         W: Write,
     {
-        write!(dest, "{}", self.0)
+        write!(dest, "{}", self.name)
     }
 }
 impl<'a> From<&'a str> for CssLocalName {
     fn from(value: &'a str) -> Self {
-        CssLocalName(LocalName::from(value))
+        CssLocalName::new(LocalName::from(value))
     }
 }
 impl Deref for CssLocalName {
     type Target = LocalName;
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.name
+    }
+}
+impl PrecomputedHash for CssLocalName {
+    fn precomputed_hash(&self) -> u32 {
+        self.precomputed_hash
     }
 }
 
@@ -271,7 +293,7 @@ impl selectors::Element for NodeDataRef<ElementData> {
 
     #[inline]
     fn has_local_name(&self, name: &CssLocalName) -> bool {
-        self.name.local == *name.0
+        self.name.local == *name.name
     }
     #[inline]
     fn has_namespace(&self, namespace: &Namespace) -> bool {
@@ -344,13 +366,12 @@ impl selectors::Element for NodeDataRef<ElementData> {
     ) -> bool {
         let attrs = self.attributes.borrow();
         match *ns {
-            NamespaceConstraint::Any => attrs
-                .map
-                .iter()
-                .any(|(name, attr)| name.local == *local_name.0 && operation.eval_str(&attr.value)),
+            NamespaceConstraint::Any => attrs.map.iter().any(|(name, attr)| {
+                name.local == *local_name.name && operation.eval_str(&attr.value)
+            }),
             NamespaceConstraint::Specific(ns_url) => attrs
                 .map
-                .get(&ExpandedName::new(ns_url, local_name.0.clone()))
+                .get(&ExpandedName::new(ns_url, local_name.name.clone()))
                 .map_or(false, |attr| operation.eval_str(&attr.value)),
         }
     }
@@ -392,6 +413,15 @@ impl selectors::Element for NodeDataRef<ElementData> {
     }
 
     fn apply_selector_flags(&self, _flags: ElementSelectorFlags) {}
+
+    fn has_custom_state(&self, _name: &<Self::Impl as SelectorImpl>::Identifier) -> bool {
+        false
+    }
+
+    fn add_element_unique_hashes(&self, _filter: &mut BloomFilter) -> bool {
+        // TODO: Implement this function properly.
+        true
+    }
 }
 
 /// A cache used to speed up resolution of CSS selectors.
@@ -402,15 +432,11 @@ impl selectors::Element for NodeDataRef<ElementData> {
 /// results, avoid using the same cache if any node in a document this cache has been used to
 /// process has been changed, removed or added.
 ///
-/// Currently, this cache is only used to save the nth child index of elements for the
-/// `:nth-child()` and `:nth-of-type()` selectors, but additional properties may be cached in the
-/// future.
-///
 /// The same cache is safe to use with multiple selectors. The same cache should be safe to use
 /// with different documents as well, but this has few benefits in most cases.
 #[derive(Default)]
 pub struct SelectorCache {
-    nth_index_cache: NthIndexCache,
+    selector_cache: SelectorCaches,
 }
 impl SelectorCache {
     /// Creates a new selector cache.
@@ -444,7 +470,9 @@ impl Selectors {
             &mut cssparser::Parser::new(&mut input),
             ParseRelative::No,
         ) {
-            Ok(list) => Ok(Selectors(list.0.into_iter().map(Selector).collect())),
+            Ok(list) => Ok(Selectors(
+                list.slice().into_iter().cloned().map(Selector).collect(),
+            )),
             Err(_) => Err(()),
         }
     }
@@ -496,14 +524,14 @@ impl Selector {
     /// Returns whether the given element matches this selector.
     #[inline]
     pub fn matches(&self, element: &NodeDataRef<ElementData>) -> bool {
-        let mut nth_index_cache = NthIndexCache::default();
+        let mut selector_cache = SelectorCaches::default();
         let mut context = matching::MatchingContext::new(
             matching::MatchingMode::Normal,
             None,
-            &mut nth_index_cache,
+            &mut selector_cache,
             QuirksMode::NoQuirks,
             NeedsSelectorFlags::No,
-            IgnoreNthChildForInvalidation::No,
+            MatchingForInvalidation::No,
         );
         matching::matches_selector(&self.0, 0, None, element, &mut context)
     }
@@ -531,10 +559,10 @@ impl Selector {
         let mut context = matching::MatchingContext::new(
             matching::MatchingMode::Normal,
             None,
-            &mut cache.nth_index_cache,
+            &mut cache.selector_cache,
             QuirksMode::NoQuirks,
             NeedsSelectorFlags::No,
-            IgnoreNthChildForInvalidation::No,
+            MatchingForInvalidation::No,
         );
         matching::matches_selector(&self.0, 0, None, element, &mut context)
     }
