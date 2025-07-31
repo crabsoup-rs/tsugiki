@@ -1,6 +1,6 @@
 [package]
 name = "mkwebfont_kuchikiki"
-version = "0.8.2-mkwebfont"
+version = "0.9.0-mkwebfont"
 authors = [
   "Brave Authors",
   "Ralph Giles <rgiles@brave.com>",
