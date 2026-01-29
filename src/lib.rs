@@ -1,6 +1,6 @@
 /*!
 
-Kuchikiki (口利き) is an HTML tree manipulation library for Rust.
+Tsugiki (接ぎ木) is an HTML tree manipulation library for Rust.
 
 */
 
@@ -16,8 +16,6 @@ mod node_data_ref;
 mod parser;
 mod select;
 mod serializer;
-#[cfg(test)]
-mod tests;
 mod tree;
 
 pub use attributes::{Attribute, Attributes, ExpandedName};
@@ -26,11 +24,11 @@ pub use parser::{parse_fragment, parse_html, parse_html_with_options, ParseOpts,
 pub use select::{Selector, SelectorCache, Selectors, Specificity};
 pub use tree::{Doctype, DocumentData, ElementData, Node, NodeData, NodeRef};
 
-/// This module re-exports a number of traits that are useful when using Kuchikiki.
+/// This module re-exports a number of traits that are useful when using Tsugiki.
 /// It can be used with:
 ///
 /// ```rust
-/// use kuchikiki::traits::*;
+/// use tsugiki::traits::*;
 /// ```
 pub mod traits {
     pub use crate::iter::{ElementIterator, NodeIterator};

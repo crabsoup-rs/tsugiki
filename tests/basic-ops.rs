@@ -1,12 +1,10 @@
 use html5ever::tree_builder::QuirksMode;
-use html5ever::QualName;
+use html5ever::{local_name, ns, QualName};
 use std::path::Path;
-
-use crate::parser::{parse_fragment, parse_html};
-use crate::select::*;
-use crate::traits::*;
-use crate::NodeRef;
 use tempfile::TempDir;
+use tsugiki::traits::*;
+use tsugiki::NodeRef;
+use tsugiki::{parse_fragment, parse_html, Selectors};
 
 #[test]
 fn text_nodes() {
@@ -93,8 +91,7 @@ fn parse_and_serialize_fragment() {
 #[test]
 fn parse_file() {
     let mut path = Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf();
-    path.push("test_data");
-    path.push("foo.html");
+    path.push("tests/data/foo.html");
 
     let html = r"<!DOCTYPE html><html><head>
         <title>Test case</title>

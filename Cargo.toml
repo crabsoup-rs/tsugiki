@@ -1,18 +1,18 @@
 [package]
-name = "mkwebfont_kuchikiki"
-version = "0.9.0-mkwebfont"
+name = "tsugiki"
+version = "0.9.0-alpha.1"
 authors = [
-  "Brave Authors",
+  "Rimi Kanokawa <rimi@rimin.moe>",
   "Ralph Giles <rgiles@brave.com>",
   "Simon Sapin <simon.sapin@exyr.org>",
 ]
 license = "MIT"
-description = "(口利き) HTML tree manipulation library"
+description = "(接ぎ木) HTML tree manipulation library"
 repository = "https://github.com/brave/kuchikiki"
 edition = "2018"
 
 [lib]
-name = "kuchikiki"
+name = "tsugiki"
 
 [[bench]]
 name = "main_bench"

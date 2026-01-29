@@ -1,9 +1,9 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use html5ever::tendril::fmt::UTF8;
 use html5ever::tendril::Tendril;
-use kuchikiki::iter::Select;
-use kuchikiki::traits::{NodeIterator, TendrilSink};
-use kuchikiki::{parse_html, Selectors};
+use tsugiki::iter::Select;
+use tsugiki::traits::{NodeIterator, TendrilSink};
+use tsugiki::{parse_html, Selectors};
 use std::rc::Rc;
 
 mod select_uncached {
@@ -46,11 +46,11 @@ const SELECTORS: &[&str] = &[
     "p + p",
     "p:nth-child(4n+1)",
     "p:nth-of-type(4n+1)",
-    ".trait,.mw-cite-backlink"
+    ".trait,.mw-cite-backlink",
 ];
 
 fn criterion_benchmark(c: &mut Criterion) {
-    for file in std::fs::read_dir("test_data/real_world").unwrap() {
+    for file in std::fs::read_dir("../tests/data/real_world").unwrap() {
         let file = file.unwrap();
         let data: Tendril<UTF8> = std::fs::read_to_string(file.path()).unwrap().into();
 
