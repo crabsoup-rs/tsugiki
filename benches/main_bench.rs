@@ -1,14 +1,14 @@
-use criterion::{criterion_group, criterion_main, Criterion};
-use html5ever::tendril::fmt::UTF8;
+use criterion::{Criterion, criterion_group, criterion_main};
 use html5ever::tendril::Tendril;
+use html5ever::tendril::fmt::UTF8;
+use std::rc::Rc;
 use tsugiki::iter::Select;
 use tsugiki::traits::{NodeIterator, TendrilSink};
-use tsugiki::{parse_html, Selectors};
-use std::rc::Rc;
+use tsugiki::{Selectors, parse_html};
 
 mod select_uncached {
-    use tsugiki::{ElementData, NodeDataRef, Selectors};
     use std::borrow::Borrow;
+    use tsugiki::{ElementData, NodeDataRef, Selectors};
 
     /// An element iterator adaptor that yields elements matching given selectors.
     pub struct Select<I, S = Selectors>

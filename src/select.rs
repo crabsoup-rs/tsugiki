@@ -17,7 +17,7 @@ use selectors::parser::{
     NonTSPseudoClass, Parser, Selector as GenericSelector, SelectorImpl, SelectorList,
 };
 use selectors::parser::{ParseRelative, SelectorParseErrorKind};
-use selectors::{self, matching, OpaqueElement};
+use selectors::{self, OpaqueElement, matching};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::{fmt, fmt::Write, ops::Deref};
 

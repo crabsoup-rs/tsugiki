@@ -1,10 +1,10 @@
 use html5ever::tree_builder::QuirksMode;
-use html5ever::{local_name, ns, QualName};
+use html5ever::{QualName, local_name, ns};
 use std::path::Path;
 use tempfile::TempDir;
-use tsugiki::traits::*;
 use tsugiki::NodeRef;
-use tsugiki::{parse_fragment, parse_html, Selectors};
+use tsugiki::traits::*;
+use tsugiki::{Selectors, parse_fragment, parse_html};
 
 #[test]
 fn text_nodes() {

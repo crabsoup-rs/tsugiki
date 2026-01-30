@@ -4,14 +4,13 @@
 // Remove this once the issue has been addressed.
 #![allow(clippy::result_unit_err)]
 
-use std::borrow::Borrow;
-use std::cell::RefCell;
-use std::iter::Rev;
-
+use crate::SelectorCache;
 use crate::node_data_ref::NodeDataRef;
 use crate::select::Selectors;
 use crate::tree::{ElementData, NodeRef};
-use crate::SelectorCache;
+use std::borrow::Borrow;
+use std::cell::RefCell;
+use std::iter::Rev;
 
 impl NodeRef {
     /// Return an iterator of references to this node and its ancestors.

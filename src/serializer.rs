@@ -1,13 +1,12 @@
-use html5ever::serialize::TraversalScope::*;
-use html5ever::serialize::{serialize, Serialize, SerializeOpts, Serializer, TraversalScope};
+use crate::tree::{NodeData, NodeRef};
 use html5ever::QualName;
+use html5ever::serialize::TraversalScope::*;
+use html5ever::serialize::{Serialize, SerializeOpts, Serializer, TraversalScope, serialize};
 use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::path::Path;
-
-use crate::tree::{NodeData, NodeRef};
 
 impl Serialize for NodeRef {
     fn serialize<S: Serializer>(

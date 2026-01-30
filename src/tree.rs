@@ -1,13 +1,12 @@
-use html5ever::tree_builder::QuirksMode;
+use crate::attributes::{Attribute, Attributes, ExpandedName};
+use crate::cell_extras::*;
+use crate::iter::NodeIterator;
 use html5ever::QualName;
+use html5ever::tree_builder::QuirksMode;
 use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::ops::Deref;
 use std::rc::{Rc, Weak};
-
-use crate::attributes::{Attribute, Attributes, ExpandedName};
-use crate::cell_extras::*;
-use crate::iter::NodeIterator;
 
 /// Node data specific to the node type.
 #[derive(Debug, PartialEq, Clone)]
