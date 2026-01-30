@@ -11,6 +11,7 @@ use crate::iter::NodeIterator;
 
 /// Node data specific to the node type.
 #[derive(Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub enum NodeData {
     /// Element node
     Element(ElementData),
@@ -64,15 +65,20 @@ pub struct ElementData {
 /// Data specific to document nodes.
 #[derive(Debug, PartialEq, Clone)]
 pub struct DocumentData {
-    #[doc(hidden)]
-    pub _quirks_mode: Cell<QuirksMode>,
+    quirks_mode: Cell<QuirksMode>,
 }
 
 impl DocumentData {
     /// The quirks mode of the document, as determined by the HTML parser.
     #[inline]
     pub fn quirks_mode(&self) -> QuirksMode {
-        self._quirks_mode.get()
+        self.quirks_mode.get()
+    }
+
+    /// Sets the quirks mode of this document.
+    #[inline]
+    pub(crate) fn set_quirks_mode(&self, quirks_mode: QuirksMode) {
+        self.quirks_mode.set(quirks_mode);
     }
 }
 
@@ -269,7 +275,7 @@ impl NodeRef {
     #[inline]
     pub fn new_document() -> NodeRef {
         NodeRef::new(NodeData::Document(DocumentData {
-            _quirks_mode: Cell::new(QuirksMode::NoQuirks),
+            quirks_mode: Cell::new(QuirksMode::NoQuirks),
         }))
     }
 

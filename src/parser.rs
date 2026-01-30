@@ -92,8 +92,7 @@ impl TreeSink for Sink {
         self.document_node
             .as_document()
             .unwrap()
-            ._quirks_mode
-            .set(mode)
+            .set_quirks_mode(mode)
     }
 
     #[inline]

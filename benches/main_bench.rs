@@ -7,10 +7,10 @@ use tsugiki::{parse_html, Selectors};
 use std::rc::Rc;
 
 mod select_uncached {
-    use kuchikiki::{ElementData, NodeDataRef, Selectors};
+    use tsugiki::{ElementData, NodeDataRef, Selectors};
     use std::borrow::Borrow;
 
-    /// An element iterator adaptor that yields elements maching given selectors.
+    /// An element iterator adaptor that yields elements matching given selectors.
     pub struct Select<I, S = Selectors>
     where
         I: Iterator<Item = NodeDataRef<ElementData>>,
@@ -50,7 +50,7 @@ const SELECTORS: &[&str] = &[
 ];
 
 fn criterion_benchmark(c: &mut Criterion) {
-    for file in std::fs::read_dir("../tests/data/real_world").unwrap() {
+    for file in std::fs::read_dir("tests/data/real_world").unwrap() {
         let file = file.unwrap();
         let data: Tendril<UTF8> = std::fs::read_to_string(file.path()).unwrap().into();
 
