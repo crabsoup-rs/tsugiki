@@ -273,7 +273,7 @@ impl selectors::Element for NodeDataRef<ElementData> {
     fn is_empty(&self) -> bool {
         self.as_node().children().all(|child| match *child.data() {
             NodeData::Element(_) => false,
-            NodeData::Text(ref text) => text.content.borrow().is_empty(),
+            NodeData::Text(ref text) => text.borrow().content.is_empty(),
             _ => true,
         })
     }
@@ -288,16 +288,16 @@ impl selectors::Element for NodeDataRef<ElementData> {
     #[inline]
     fn is_html_element_in_html_document(&self) -> bool {
         // FIXME: Have a notion of HTML document v.s. XML document?
-        self.name.ns == ns!(html)
+        self.borrow().name.ns == ns!(html)
     }
 
     #[inline]
     fn has_local_name(&self, name: &CssLocalName) -> bool {
-        self.name.local == *name.name
+        self.borrow().name.local == *name.name
     }
     #[inline]
     fn has_namespace(&self, namespace: &Namespace) -> bool {
-        self.name.ns == *namespace
+        self.borrow().name.ns == *namespace
     }
 
     #[inline]
@@ -317,27 +317,27 @@ impl selectors::Element for NodeDataRef<ElementData> {
 
     #[inline]
     fn is_same_type(&self, other: &Self) -> bool {
-        self.name == other.name
+        self.borrow().name == other.borrow().name
     }
 
     #[inline]
     fn is_link(&self) -> bool {
-        self.name.ns == ns!(html)
+        let lock = self.borrow();
+        lock.name.ns == ns!(html)
             && matches!(
-                self.name.local,
+                lock.name.local,
                 local_name!("a") | local_name!("area") | local_name!("link")
             )
-            && self
+            && lock
                 .attributes
-                .borrow()
                 .map
                 .contains_key(&ExpandedName::new(ns!(), local_name!("href")))
     }
 
     #[inline]
     fn has_id(&self, id: &CssLocalName, case_sensitivity: CaseSensitivity) -> bool {
-        self.attributes
-            .borrow()
+        self.borrow()
+            .attributes
             .get(local_name!("id"))
             .map_or(false, |id_attr| {
                 case_sensitivity.eq(id.as_bytes(), id_attr.as_bytes())
@@ -348,7 +348,7 @@ impl selectors::Element for NodeDataRef<ElementData> {
     fn has_class(&self, name: &CssLocalName, case_sensitivity: CaseSensitivity) -> bool {
         let name = name.as_bytes();
         !name.is_empty()
-            && if let Some(class_attr) = self.attributes.borrow().get(local_name!("class")) {
+            && if let Some(class_attr) = self.borrow().attributes.get(local_name!("class")) {
                 class_attr
                     .split(SELECTOR_WHITESPACE)
                     .any(|class| case_sensitivity.eq(class.as_bytes(), name))
@@ -364,7 +364,7 @@ impl selectors::Element for NodeDataRef<ElementData> {
         local_name: &CssLocalName,
         operation: &AttrSelectorOperation<&CssString>,
     ) -> bool {
-        let attrs = self.attributes.borrow();
+        let attrs = &self.borrow().attributes;
         match *ns {
             NamespaceConstraint::Any => attrs.map.iter().any(|(name, attr)| {
                 name.local == *local_name.name && operation.eval_str(&attr.value)
@@ -390,17 +390,18 @@ impl selectors::Element for NodeDataRef<ElementData> {
         _context: &mut matching::MatchingContext<KuchikiSelectors>,
     ) -> bool {
         use self::PseudoClass::*;
+        let lock = self.borrow();
         match *pseudo {
             Active | Focus | Hover | Enabled | Disabled | Checked | Indeterminate | Visited => {
                 false
             }
             AnyLink | Link => {
-                self.name.ns == ns!(html)
+                lock.name.ns == ns!(html)
                     && matches!(
-                        self.name.local,
+                        lock.name.local,
                         local_name!("a") | local_name!("area") | local_name!("link")
                     )
-                    && self.attributes.borrow().contains(local_name!("href"))
+                    && lock.attributes.contains(local_name!("href"))
             }
         }
     }

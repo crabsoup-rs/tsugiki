@@ -1,4 +1,4 @@
-use crate::tree::{DoctypeData, DocumentData, ElementData, Node, NodeRef};
+use crate::tree::{DoctypeData, DocumentData, ElementData, Node, NodeRef, TextData};
 use std::cell::RefCell;
 use std::fmt;
 use std::ops::Deref;
@@ -12,13 +12,13 @@ impl NodeRef {
 
     /// If this node is a text node, return a strong reference to its contents.
     #[inline]
-    pub fn into_text_ref(self) -> Option<NodeDataRef<RefCell<String>>> {
+    pub fn into_text_ref(self) -> Option<NodeDataRef<TextData>> {
         NodeDataRef::new_opt(self, Node::as_text)
     }
 
     /// If this node is a comment, return a strong reference to its contents.
     #[inline]
-    pub fn into_comment_ref(self) -> Option<NodeDataRef<RefCell<String>>> {
+    pub fn into_comment_ref(self) -> Option<NodeDataRef<TextData>> {
         NodeDataRef::new_opt(self, Node::as_comment)
     }
 
@@ -39,7 +39,7 @@ impl NodeRef {
 #[derive(Eq)]
 pub struct NodeDataRef<T> {
     _keep_alive: NodeRef,
-    _reference: *const T,
+    _reference: *const RefCell<T>,
 }
 
 impl<T> NodeDataRef<T> {
@@ -47,7 +47,7 @@ impl<T> NodeDataRef<T> {
     #[inline]
     pub fn new<F>(rc: NodeRef, f: F) -> NodeDataRef<T>
     where
-        F: FnOnce(&Node) -> &T,
+        F: FnOnce(&Node) -> &RefCell<T>,
     {
         NodeDataRef {
             _reference: f(&rc),
@@ -59,12 +59,14 @@ impl<T> NodeDataRef<T> {
     #[inline]
     pub fn new_opt<F>(rc: NodeRef, f: F) -> Option<NodeDataRef<T>>
     where
-        F: FnOnce(&Node) -> Option<&T>,
+        F: FnOnce(&Node) -> Option<&RefCell<T>>,
     {
-        f(&rc).map(|r| r as *const T).map(move |r| NodeDataRef {
-            _reference: r,
-            _keep_alive: rc,
-        })
+        f(&rc)
+            .map(|r| r as *const RefCell<T>)
+            .map(move |r| NodeDataRef {
+                _reference: r,
+                _keep_alive: rc,
+            })
     }
 
     /// Access the corresponding node.
@@ -75,9 +77,9 @@ impl<T> NodeDataRef<T> {
 }
 
 impl<T> Deref for NodeDataRef<T> {
-    type Target = T;
+    type Target = RefCell<T>;
     #[inline]
-    fn deref(&self) -> &T {
+    fn deref(&self) -> &RefCell<T> {
         unsafe { &*self._reference }
     }
 }

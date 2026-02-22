@@ -226,6 +226,7 @@ impl TreeSink for Sink {
         self.document_node
             .as_document()
             .unwrap()
+            .borrow_mut()
             .set_quirks_mode(mode)
     }
 
@@ -236,7 +237,7 @@ impl TreeSink for Sink {
 
     #[inline]
     fn elem_name<'a>(&self, target: &'a NodeRef) -> attributes::ExpandedName {
-        let name = &target.as_element().unwrap().name;
+        let name = &target.as_element().unwrap().borrow().name;
         attributes::ExpandedName {
             ns: name.ns.clone(),
             local: name.local.clone(),
@@ -283,7 +284,7 @@ impl TreeSink for Sink {
             NodeOrText::AppendText(text) => {
                 if let Some(last_child) = parent.last_child() {
                     if let Some(existing) = last_child.as_text() {
-                        existing.borrow_mut().push_str(&text);
+                        existing.borrow_mut().content.push_str(&text);
                         return;
                     }
                 }
@@ -299,7 +300,7 @@ impl TreeSink for Sink {
             NodeOrText::AppendText(text) => {
                 if let Some(previous_sibling) = sibling.previous_sibling() {
                     if let Some(existing) = previous_sibling.as_text() {
-                        existing.borrow_mut().push_str(&text);
+                        existing.borrow_mut().content.push_str(&text);
                         return;
                     }
                 }
@@ -322,7 +323,7 @@ impl TreeSink for Sink {
     #[inline]
     fn add_attrs_if_missing(&self, target: &NodeRef, attrs: Vec<Attribute>) {
         let element = target.as_element().unwrap();
-        let mut attributes = element.attributes.borrow_mut();
+        let attributes = &mut element.borrow_mut().attributes;
 
         for Attribute {
             name: QualName { prefix, ns, local },
@@ -363,6 +364,7 @@ impl TreeSink for Sink {
         target
             .as_element()
             .unwrap()
+            .borrow()
             .template_contents
             .clone()
             .unwrap()

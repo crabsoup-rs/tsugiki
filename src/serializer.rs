@@ -16,11 +16,12 @@ impl Serialize for NodeRef {
     ) -> io::Result<()> {
         match (traversal_scope, self.data()) {
             (ref scope, NodeData::Element(element)) => {
-                if *scope == IncludeNode {
-                    let attrs = element.attributes.borrow();
+                let element = element.borrow();
 
+                if *scope == IncludeNode {
                     // Unfortunately we need to allocate something to hold these &'a QualName
-                    let attrs = attrs
+                    let attrs = element
+                        .attributes
                         .map
                         .iter()
                         .map(|(name, attr)| {
@@ -65,13 +66,17 @@ impl Serialize for NodeRef {
 
             (ChildrenOnly(_), _) => Ok(()),
 
-            (IncludeNode, NodeData::Doctype(doctype)) => serializer.write_doctype(&doctype.name),
-            (IncludeNode, NodeData::Text(text)) => serializer.write_text(&text.content.borrow()),
-            (IncludeNode, NodeData::Comment(text)) => {
-                serializer.write_comment(&text.content.borrow())
+            (IncludeNode, NodeData::Doctype(doctype)) => {
+                serializer.write_doctype(&doctype.borrow().name)
             }
-            (IncludeNode, NodeData::ProcessingInstruction(contents)) => serializer
-                .write_processing_instruction(&contents.target.borrow(), &contents.data.borrow()),
+            (IncludeNode, NodeData::Text(text)) => serializer.write_text(&text.borrow().content),
+            (IncludeNode, NodeData::Comment(text)) => {
+                serializer.write_comment(&text.borrow().content)
+            }
+            (IncludeNode, NodeData::ProcessingInstruction(contents)) => {
+                let contents = contents.borrow();
+                serializer.write_processing_instruction(&contents.target, &contents.data)
+            }
         }
     }
 }

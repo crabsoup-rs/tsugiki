@@ -13,23 +13,23 @@ use std::rc::{Rc, Weak};
 #[non_exhaustive]
 pub enum NodeData {
     /// Element node
-    Element(ElementData),
+    Element(RefCell<ElementData>),
 
     /// Text node
-    Text(TextData),
+    Text(RefCell<TextData>),
 
     /// Comment node
-    Comment(TextData),
+    Comment(RefCell<TextData>),
 
     /// [Processing instruction]
     /// (https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction) node
-    ProcessingInstruction(ProcessingInstructionData),
+    ProcessingInstruction(RefCell<ProcessingInstructionData>),
 
     /// Doctype node
-    Doctype(DoctypeData),
+    Doctype(RefCell<DoctypeData>),
 
     /// Document node
-    Document(DocumentData),
+    Document(RefCell<DocumentData>),
 
     /// Document fragment node
     DocumentFragment,
@@ -39,12 +39,12 @@ pub enum NodeData {
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextData {
     /// The contents of the text or comment node.
-    pub content: RefCell<String>,
+    pub content: String,
 }
 impl TextData {
     pub fn new(content: impl Into<String>) -> Self {
         TextData {
-            content: RefCell::new(content.into()),
+            content: content.into(),
         }
     }
 }
@@ -56,16 +56,16 @@ impl TextData {
 #[derive(Debug, PartialEq, Clone)]
 pub struct ProcessingInstructionData {
     /// The target of this processing instruction.
-    pub target: RefCell<String>,
+    pub target: String,
 
     /// The data associated with this processing instruction.
-    pub data: RefCell<String>,
+    pub data: String,
 }
 impl ProcessingInstructionData {
     pub fn new(target: impl Into<String>, data: impl Into<String>) -> Self {
         ProcessingInstructionData {
-            target: RefCell::new(target.into()),
-            data: RefCell::new(data.into()),
+            target: target.into(),
+            data: data.into(),
         }
     }
 }
@@ -91,7 +91,7 @@ pub struct ElementData {
     pub name: QualName,
 
     /// The attributes of the elements.
-    pub attributes: RefCell<Attributes>,
+    pub attributes: Attributes,
 
     /// If the element is an HTML `<template>` element,
     /// the document fragment node that is the root of template contents.
@@ -111,20 +111,20 @@ impl ElementData {
 /// Data specific to document nodes.
 #[derive(Debug, PartialEq, Clone)]
 pub struct DocumentData {
-    quirks_mode: Cell<QuirksMode>,
+    quirks_mode: QuirksMode,
 }
 
 impl DocumentData {
     /// The quirks mode of the document, as determined by the HTML parser.
     #[inline]
     pub fn quirks_mode(&self) -> QuirksMode {
-        self.quirks_mode.get()
+        self.quirks_mode
     }
 
     /// Sets the quirks mode of this document.
     #[inline]
-    pub(crate) fn set_quirks_mode(&self, quirks_mode: QuirksMode) {
-        self.quirks_mode.set(quirks_mode);
+    pub(crate) fn set_quirks_mode(&mut self, quirks_mode: QuirksMode) {
+        self.quirks_mode = quirks_mode;
     }
 }
 
@@ -264,29 +264,29 @@ impl NodeRef {
     where
         I: IntoIterator<Item = (ExpandedName, Attribute)>,
     {
-        NodeRef::new(NodeData::Element(ElementData {
+        NodeRef::new(NodeData::Element(RefCell::new(ElementData {
             template_contents: if name.expanded() == expanded_name!(html "template") {
                 Some(NodeRef::new(NodeData::DocumentFragment))
             } else {
                 None
             },
             name,
-            attributes: RefCell::new(Attributes {
+            attributes: Attributes {
                 map: attributes.into_iter().collect(),
-            }),
-        }))
+            },
+        })))
     }
 
     /// Create a new text node.
     #[inline]
     pub fn new_text<T: Into<String>>(value: T) -> NodeRef {
-        NodeRef::new(NodeData::Text(TextData::new(value)))
+        NodeRef::new(NodeData::Text(RefCell::new(TextData::new(value))))
     }
 
     /// Create a new comment node.
     #[inline]
     pub fn new_comment<T: Into<String>>(value: T) -> NodeRef {
-        NodeRef::new(NodeData::Comment(TextData::new(value)))
+        NodeRef::new(NodeData::Comment(RefCell::new(TextData::new(value))))
     }
 
     /// Create a new processing instruction node.
@@ -296,9 +296,9 @@ impl NodeRef {
         T1: Into<String>,
         T2: Into<String>,
     {
-        NodeRef::new(NodeData::ProcessingInstruction(
+        NodeRef::new(NodeData::ProcessingInstruction(RefCell::new(
             ProcessingInstructionData::new(target, data),
-        ))
+        )))
     }
 
     /// Create a new doctype node.
@@ -309,26 +309,26 @@ impl NodeRef {
         T2: Into<String>,
         T3: Into<String>,
     {
-        NodeRef::new(NodeData::Doctype(DoctypeData {
+        NodeRef::new(NodeData::Doctype(RefCell::new(DoctypeData {
             name: name.into(),
             public_id: public_id.into(),
             system_id: system_id.into(),
-        }))
+        })))
     }
 
     /// Create a new document node.
     #[inline]
     pub fn new_document() -> NodeRef {
-        NodeRef::new(NodeData::Document(DocumentData {
-            quirks_mode: Cell::new(QuirksMode::NoQuirks),
-        }))
+        NodeRef::new(NodeData::Document(RefCell::new(DocumentData {
+            quirks_mode: QuirksMode::NoQuirks,
+        })))
     }
 
     /// Return the concatenation of all text nodes in this subtree.
     pub fn text_contents(&self) -> String {
         let mut s = String::new();
         for text_node in self.inclusive_descendants().text_nodes() {
-            s.push_str(&text_node.borrow());
+            s.push_str(&text_node.borrow().content);
         }
         s
     }
@@ -343,7 +343,7 @@ impl Node {
 
     /// If this node is an element, return a reference to element-specific data.
     #[inline]
-    pub fn as_element(&self) -> Option<&ElementData> {
+    pub fn as_element(&self) -> Option<&RefCell<ElementData>> {
         match self.data {
             NodeData::Element(ref value) => Some(value),
             _ => None,
@@ -352,25 +352,25 @@ impl Node {
 
     /// If this node is a text node, return a reference to its contents.
     #[inline]
-    pub fn as_text(&self) -> Option<&RefCell<String>> {
+    pub fn as_text(&self) -> Option<&RefCell<TextData>> {
         match self.data {
-            NodeData::Text(ref value) => Some(&value.content),
+            NodeData::Text(ref value) => Some(&value),
             _ => None,
         }
     }
 
     /// If this node is a comment, return a reference to its contents.
     #[inline]
-    pub fn as_comment(&self) -> Option<&RefCell<String>> {
+    pub fn as_comment(&self) -> Option<&RefCell<TextData>> {
         match self.data {
-            NodeData::Comment(ref value) => Some(&value.content),
+            NodeData::Comment(ref value) => Some(&value),
             _ => None,
         }
     }
 
     /// If this node is a document, return a reference to doctype-specific data.
     #[inline]
-    pub fn as_doctype(&self) -> Option<&DoctypeData> {
+    pub fn as_doctype(&self) -> Option<&RefCell<DoctypeData>> {
         match self.data {
             NodeData::Doctype(ref value) => Some(value),
             _ => None,
@@ -379,7 +379,7 @@ impl Node {
 
     /// If this node is a document, return a reference to document-specific data.
     #[inline]
-    pub fn as_document(&self) -> Option<&DocumentData> {
+    pub fn as_document(&self) -> Option<&RefCell<DocumentData>> {
         match self.data {
             NodeData::Document(ref value) => Some(value),
             _ => None,

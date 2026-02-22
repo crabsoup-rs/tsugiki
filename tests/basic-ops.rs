@@ -25,15 +25,15 @@ fn text_nodes() {
         .text_nodes()
         .collect::<Vec<_>>();
     assert_eq!(texts.len(), 3);
-    assert_eq!(&*texts[0].borrow(), "Content contains ");
-    assert_eq!(&*texts[1].borrow(), "Important");
-    assert_eq!(&*texts[2].borrow(), " data");
+    assert_eq!(&*texts[0].borrow().content, "Content contains ");
+    assert_eq!(&*texts[1].borrow().content, "Important");
+    assert_eq!(&*texts[2].borrow().content, " data");
     {
         let mut x = texts[0].borrow_mut();
-        x.truncate(0);
-        x.push_str("Content doesn't contain ");
+        x.content.truncate(0);
+        x.content.push_str("Content doesn't contain ");
     }
-    assert_eq!(&*texts[0].borrow(), "Content doesn't contain ");
+    assert_eq!(&*texts[0].borrow().content, "Content doesn't contain ");
 }
 
 #[test]
@@ -44,7 +44,7 @@ fn parse_and_serialize() {
 <p>Content";
     let document = parse_html().one(html);
     assert_eq!(
-        document.as_document().unwrap().quirks_mode(),
+        document.as_document().unwrap().borrow().quirks_mode(),
         QuirksMode::NoQuirks
     );
     assert_eq!(
@@ -62,7 +62,7 @@ fn parse_and_serialize_with_template() {
 <template><p>Content</p></template>";
     let document = parse_html().one(html);
     assert_eq!(
-        document.as_document().unwrap().quirks_mode(),
+        document.as_document().unwrap().borrow().quirks_mode(),
         QuirksMode::NoQuirks
     );
     assert_eq!(
@@ -79,7 +79,7 @@ fn parse_and_serialize_fragment() {
     let ctx_name = QualName::new(None, ns!(html), local_name!("tbody"));
     let document = parse_fragment(ctx_name, vec![]).one(html);
     assert_eq!(
-        document.as_document().unwrap().quirks_mode(),
+        document.as_document().unwrap().borrow().quirks_mode(),
         QuirksMode::NoQuirks
     );
     assert_eq!(
@@ -132,10 +132,10 @@ fn select() {
     let matching = document.select("p.foo").unwrap().collect::<Vec<_>>();
     assert_eq!(matching.len(), 2);
     let child = matching[0].as_node().first_child().unwrap();
-    assert_eq!(&**child.as_text().unwrap().borrow(), "Foo\n");
-    assert_eq!(matching[0].attributes.borrow().get("class"), Some("foo"));
+    assert_eq!(&child.as_text().unwrap().borrow().content, "Foo\n");
+    assert_eq!(matching[0].borrow().attributes.get("class"), Some("foo"));
     assert_eq!(
-        matching[0].attributes.borrow().get(local_name!("class")),
+        matching[0].borrow().attributes.get(local_name!("class")),
         Some("foo")
     );
 
@@ -158,10 +158,10 @@ fn select_first() {
     let document = parse_html().one(html);
     let matching = document.select_first("p.foo").unwrap();
     let child = matching.as_node().first_child().unwrap();
-    assert_eq!(&**child.as_text().unwrap().borrow(), "Foo\n");
-    assert_eq!(matching.attributes.borrow().get("class"), Some("foo"));
+    assert_eq!(&child.as_text().unwrap().borrow().content, "Foo\n");
+    assert_eq!(matching.borrow().attributes.get("class"), Some("foo"));
     assert_eq!(
-        matching.attributes.borrow().get(local_name!("class")),
+        matching.borrow().attributes.get(local_name!("class")),
         Some("foo")
     );
 
@@ -171,7 +171,7 @@ fn select_first() {
 fn check_only_match(document: &NodeRef, selector: &str, text: &str) {
     let mut matching = document.select(selector).unwrap();
     let child = matching.next().unwrap().as_node().first_child().unwrap();
-    assert_eq!(&**child.as_text().unwrap().borrow(), text);
+    assert_eq!(&child.as_text().unwrap().borrow().content, text);
     assert!(matching.next().is_none());
 }
 

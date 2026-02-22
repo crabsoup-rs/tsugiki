@@ -7,9 +7,8 @@
 use crate::SelectorCache;
 use crate::node_data_ref::NodeDataRef;
 use crate::select::Selectors;
-use crate::tree::{ElementData, NodeRef};
+use crate::tree::{ElementData, NodeRef, TextData};
 use std::borrow::Borrow;
-use std::cell::RefCell;
 use std::iter::Rev;
 
 impl NodeRef {
@@ -373,12 +372,12 @@ filter_map_like_iterator! {
 
 filter_map_like_iterator! {
     /// A node iterator adaptor that yields comment nodes.
-    Comments: NodeRef::into_comment_ref, NodeRef => NodeDataRef<RefCell<String>>
+    Comments: NodeRef::into_comment_ref, NodeRef => NodeDataRef<TextData>
 }
 
 filter_map_like_iterator! {
     /// A node iterator adaptor that yields text nodes.
-    TextNodes: NodeRef::into_text_ref, NodeRef => NodeDataRef<RefCell<String>>
+    TextNodes: NodeRef::into_text_ref, NodeRef => NodeDataRef<TextData>
 }
 
 /// An element iterator adaptor that yields elements maching given selectors.
