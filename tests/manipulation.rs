@@ -1,5 +1,4 @@
-use html5ever::{QualName, local_name, ns};
-use tsugiki::{Attribute, ExpandedName, NodeRef, parse_html};
+use tsugiki::{Attribute, ExpandedName, NodeRef, QualName, local_name, ns, parse_html};
 
 #[test]
 fn test_append() {

@@ -1,7 +1,7 @@
-use crate::attributes::{Attribute, Attributes, ExpandedName};
+use crate::attributes::{Attribute, Attributes};
 use crate::cell_extras::*;
 use crate::iter::NodeIterator;
-use html5ever::QualName;
+use crate::{ExpandedName, QualName};
 use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::ops::Deref;
@@ -280,7 +280,7 @@ impl NodeRef {
         I: IntoIterator<Item = (ExpandedName, Attribute)>,
     {
         NodeRef::new(NodeData::Element(RefCell::new(ElementData {
-            template_contents: if name.expanded() == expanded_name!(html "template") {
+            template_contents: if name.expanded_html5ever() == expanded_name!(html "template") {
                 Some(NodeRef::new(NodeData::DocumentFragment))
             } else {
                 None

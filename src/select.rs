@@ -2,7 +2,7 @@
 // Remove this once the issue has been addressed.
 #![allow(clippy::result_unit_err)]
 
-use crate::attributes::ExpandedName;
+use crate::ExpandedName;
 use crate::iter::{NodeIterator, Select};
 use crate::node_data_ref::NodeDataRef;
 use crate::tree::{ElementData, Node, NodeData, NodeRef};

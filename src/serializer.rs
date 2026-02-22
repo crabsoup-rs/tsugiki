@@ -37,7 +37,7 @@ impl Serialize for NodeRef {
                         .collect::<Vec<_>>();
 
                     serializer.start_elem(
-                        element.name.clone(),
+                        element.name.to_html5ever(),
                         attrs.iter().map(|&(ref name, value)| (name, &**value)),
                     )?
                 }
@@ -52,7 +52,7 @@ impl Serialize for NodeRef {
                 }
 
                 if *scope == IncludeNode {
-                    serializer.end_elem(element.name.clone())?
+                    serializer.end_elem(element.name.to_html5ever())?
                 }
                 Ok(())
             }

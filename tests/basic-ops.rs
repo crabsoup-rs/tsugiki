@@ -1,8 +1,7 @@
-use html5ever::{QualName, local_name, ns};
 use std::path::Path;
 use tempfile::TempDir;
 use tsugiki::traits::*;
-use tsugiki::{NodeRef, QuirksMode};
+use tsugiki::{Attributes, NodeRef, QualName, QuirksMode, local_name, ns};
 use tsugiki::{Selectors, parse_fragment, parse_html};
 
 #[test]
@@ -76,7 +75,7 @@ fn parse_and_serialize_fragment() {
     let html = r"<tbody><tr><td>Test case";
 
     let ctx_name = QualName::new(None, ns!(html), local_name!("tbody"));
-    let document = parse_fragment(ctx_name, vec![]).one(html);
+    let document = parse_fragment(ctx_name, Attributes::default()).one(html);
     assert_eq!(
         document.as_document().unwrap().borrow().quirks_mode(),
         QuirksMode::NoQuirks

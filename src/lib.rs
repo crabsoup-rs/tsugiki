@@ -12,13 +12,15 @@ extern crate html5ever;
 mod attributes;
 mod cell_extras;
 pub mod iter;
+mod names;
 mod node_data_ref;
 mod parser;
 mod select;
 mod serializer;
 mod tree;
 
-pub use attributes::{Attribute, Attributes, ExpandedName};
+pub use attributes::{Attribute, Attributes};
+pub use names::{ExpandedName, QualName};
 pub use node_data_ref::NodeDataRef;
 pub use parser::{
     ParseOpts, Parser, parse_fragment, parse_fragment_with_options, parse_html,
@@ -30,7 +32,10 @@ pub use tree::{
     QuirksMode, TextData,
 };
 
-/// This module re-exports a number of traits that are useful when using Tsugiki.
+#[doc(inline)]
+pub use html5ever::{LocalName, Namespace, Prefix, local_name, namespace_prefix, ns};
+
+/// This module contains a number of traits that are useful when using Tsugiki.
 /// It can be used with:
 ///
 /// ```rust
@@ -38,5 +43,5 @@ pub use tree::{
 /// ```
 pub mod traits {
     pub use crate::iter::{ElementIterator, NodeIterator};
-    pub use html5ever::tendril::TendrilSink;
+    pub use tendril::TendrilSink;
 }
