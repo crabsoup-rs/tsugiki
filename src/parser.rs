@@ -2,17 +2,14 @@
 //! internal implementation details of `html5ever` (such as tendrils and
 
 use crate::attributes;
-use crate::tree::NodeRef;
+use crate::tree::{NodeRef, QuirksMode};
 use html5ever::tokenizer::TokenizerOpts;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, TreeBuilderOpts, TreeSink};
-use html5ever::{self, Attribute, QualName};
+use html5ever::{self, Attribute, QualName, tree_builder};
 use std::borrow::Cow;
 use std::rc::Rc;
 use tendril::stream::Utf8LossyDecoder;
 use tendril::{StrTendril, TendrilSink};
-
-#[doc(inline)]
-pub use html5ever::tree_builder::QuirksMode;
 
 /// The parser type used by this crate.
 ///
@@ -135,7 +132,7 @@ impl Default for ParseOpts {
                 scripting_enabled: true,
                 iframe_srcdoc: false,
                 drop_doctype: false,
-                quirks_mode: QuirksMode::NoQuirks,
+                quirks_mode: tree_builder::QuirksMode::NoQuirks,
             },
             on_parse_error: Vec::new(),
         }
@@ -222,12 +219,16 @@ impl TreeSink for Sink {
     }
 
     #[inline]
-    fn set_quirks_mode(&self, mode: QuirksMode) {
+    fn set_quirks_mode(&self, mode: tree_builder::QuirksMode) {
         self.document_node
             .as_document()
             .unwrap()
             .borrow_mut()
-            .set_quirks_mode(mode)
+            .set_quirks_mode(match mode {
+                tree_builder::QuirksMode::Quirks => QuirksMode::Quirks,
+                tree_builder::QuirksMode::LimitedQuirks => QuirksMode::LimitedQuirks,
+                tree_builder::QuirksMode::NoQuirks => QuirksMode::NoQuirks,
+            })
     }
 
     #[inline]

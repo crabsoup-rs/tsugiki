@@ -1,5 +1,4 @@
-use html5ever::tree_builder::QuirksMode;
-use tsugiki::{NodeRef, parse_html};
+use tsugiki::{NodeRef, QuirksMode, parse_html};
 
 #[test]
 fn test_default_document_quirks() {
@@ -42,9 +41,6 @@ fn test_quirks_mode_limited_quirks() {
 
 #[test]
 fn test_broken_tags_quirks() {
-    // Malformed doctype or multiple html tags might not change quirks mode itself if it's already set,
-    // but the presence of certain tokens before DOCTYPE can trigger it.
-
     // Text before DOCTYPE
     let doc = parse_html().one("  abc <!DOCTYPE html><html></html>");
     assert_eq!(
@@ -95,8 +91,6 @@ fn test_comment_before_doctype() {
 fn test_nested_a_tags() {
     // <a> tags cannot be nested in HTML, the second <a> should be moved outside.
     let doc = parse_html().one("<!DOCTYPE html><a href='1'>1<a>2</a>3</a>");
-    // Expected behavior: <a href='1'>1</a><a>2</a>3
-    // Note: html5ever might handle this by closing the first <a> and starting the second.
     let a_tags = doc.select("a").unwrap().collect::<Vec<_>>();
     assert_eq!(a_tags.len(), 2);
     assert_eq!(a_tags[0].as_node().to_string(), "<a href=\"1\">1</a>");
@@ -129,13 +123,9 @@ fn test_self_closing_div() {
 fn test_table_correction() {
     // Content outside <td>/<th> in a <table> should be moved outside or wrapped.
     let doc = parse_html().one("<!DOCTYPE html><table><tr><td>1</td>2</tr>3</table>");
-    // '2' and '3' should be moved before the table (foster parenting).
-    // Or sometimes just before the table element.
     let p = doc.select("table").unwrap().count();
     assert_eq!(p, 1);
-
     let html = doc.to_string();
-    // Foster parenting puts it before the table
     assert!(html.contains("23<table>"));
 }
 
@@ -187,10 +177,6 @@ fn test_script_content_not_parsed() {
 fn test_misplaced_table_elements() {
     // <tr> without <table> should be auto-wrapped or handled.
     let doc = parse_html().one("<!DOCTYPE html><tr><td>1</td></tr>");
-    // html5ever will create <html><head></head><body>1</body></html> because <tr> is ignored/stripped when not in table context and its text is foster parented?
-    // Wait, let's see. <tr> is usually ignored if not in table.
-
-    // In many cases, it just gets stripped and its text content remains.
     assert_eq!(doc.select("tr").unwrap().count(), 0);
     assert!(doc.to_string().contains("1"));
 }

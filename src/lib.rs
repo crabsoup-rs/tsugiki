@@ -25,7 +25,10 @@ pub use parser::{
     parse_html_with_options,
 };
 pub use select::{Selector, SelectorCache, Selectors, Specificity};
-pub use tree::{DoctypeData, DocumentData, ElementData, Node, NodeData, NodeRef};
+pub use tree::{
+    DoctypeData, DocumentData, ElementData, Node, NodeData, NodeRef, ProcessingInstructionData,
+    QuirksMode, TextData,
+};
 
 /// This module re-exports a number of traits that are useful when using Tsugiki.
 /// It can be used with:

@@ -2,7 +2,6 @@ use crate::attributes::{Attribute, Attributes, ExpandedName};
 use crate::cell_extras::*;
 use crate::iter::NodeIterator;
 use html5ever::QualName;
-use html5ever::tree_builder::QuirksMode;
 use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::ops::Deref;
@@ -42,6 +41,7 @@ pub struct TextData {
     pub content: String,
 }
 impl TextData {
+    /// Helper for creating a new text data node.
     pub fn new(content: impl Into<String>) -> Self {
         TextData {
             content: content.into(),
@@ -62,6 +62,7 @@ pub struct ProcessingInstructionData {
     pub data: String,
 }
 impl ProcessingInstructionData {
+    /// Helper for creating a new processing instruction data node.
     pub fn new(target: impl Into<String>, data: impl Into<String>) -> Self {
         ProcessingInstructionData {
             target: target.into(),
@@ -126,6 +127,20 @@ impl DocumentData {
     pub(crate) fn set_quirks_mode(&mut self, quirks_mode: QuirksMode) {
         self.quirks_mode = quirks_mode;
     }
+}
+
+/// A document's quirks mode, for compatibility with old browsers. See [quirks mode on wikipedia]
+/// for more information.
+///
+/// [quirks mode on wikipedia]: https://en.wikipedia.org/wiki/Quirks_mode
+#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
+pub enum QuirksMode {
+    /// Full quirks mode
+    Quirks,
+    /// Almost standards mode
+    LimitedQuirks,
+    /// Standards mode
+    NoQuirks,
 }
 
 /// A strong reference to a node.

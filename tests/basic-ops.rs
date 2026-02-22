@@ -1,9 +1,8 @@
-use html5ever::tree_builder::QuirksMode;
 use html5ever::{QualName, local_name, ns};
 use std::path::Path;
 use tempfile::TempDir;
-use tsugiki::NodeRef;
 use tsugiki::traits::*;
+use tsugiki::{NodeRef, QuirksMode};
 use tsugiki::{Selectors, parse_fragment, parse_html};
 
 #[test]
