@@ -1,5 +1,3 @@
-use tsugiki::traits::*;
-
 fn main() {
     let html = r"
         <!DOCTYPE html>

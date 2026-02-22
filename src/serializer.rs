@@ -66,12 +66,12 @@ impl Serialize for NodeRef {
             (ChildrenOnly(_), _) => Ok(()),
 
             (IncludeNode, NodeData::Doctype(doctype)) => serializer.write_doctype(&doctype.name),
-            (IncludeNode, NodeData::Text(text)) => serializer.write_text(&text.borrow()),
-            (IncludeNode, NodeData::Comment(text)) => serializer.write_comment(&text.borrow()),
-            (IncludeNode, NodeData::ProcessingInstruction(contents)) => {
-                let contents = contents.borrow();
-                serializer.write_processing_instruction(&contents.0, &contents.1)
+            (IncludeNode, NodeData::Text(text)) => serializer.write_text(&text.content.borrow()),
+            (IncludeNode, NodeData::Comment(text)) => {
+                serializer.write_comment(&text.content.borrow())
             }
+            (IncludeNode, NodeData::ProcessingInstruction(contents)) => serializer
+                .write_processing_instruction(&contents.target.borrow(), &contents.data.borrow()),
         }
     }
 }

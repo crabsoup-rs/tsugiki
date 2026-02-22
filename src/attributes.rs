@@ -2,7 +2,7 @@ use html5ever::{LocalName, Namespace, Prefix};
 use indexmap::{IndexMap, map::Entry};
 
 /// Convenience wrapper around a indexmap that adds method for attributes in the null namespace.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct Attributes {
     /// A map of attributes whose name can have namespaces.
     pub map: IndexMap<ExpandedName, Attribute>,

@@ -273,7 +273,7 @@ impl selectors::Element for NodeDataRef<ElementData> {
     fn is_empty(&self) -> bool {
         self.as_node().children().all(|child| match *child.data() {
             NodeData::Element(_) => false,
-            NodeData::Text(ref text) => text.borrow().is_empty(),
+            NodeData::Text(ref text) => text.content.borrow().is_empty(),
             _ => true,
         })
     }

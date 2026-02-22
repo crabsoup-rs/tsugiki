@@ -1,4 +1,4 @@
-use crate::tree::{Doctype, DocumentData, ElementData, Node, NodeRef};
+use crate::tree::{DoctypeData, DocumentData, ElementData, Node, NodeRef};
 use std::cell::RefCell;
 use std::fmt;
 use std::ops::Deref;
@@ -24,7 +24,7 @@ impl NodeRef {
 
     /// If this node is a doctype, return a strong reference to doctype-specific data.
     #[inline]
-    pub fn into_doctype_ref(self) -> Option<NodeDataRef<Doctype>> {
+    pub fn into_doctype_ref(self) -> Option<NodeDataRef<DoctypeData>> {
         NodeDataRef::new_opt(self, Node::as_doctype)
     }
 

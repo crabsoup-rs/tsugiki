@@ -16,16 +16,17 @@ pub enum NodeData {
     Element(ElementData),
 
     /// Text node
-    Text(RefCell<String>),
+    Text(TextData),
 
     /// Comment node
-    Comment(RefCell<String>),
+    Comment(TextData),
 
-    /// Processing instruction node
-    ProcessingInstruction(RefCell<(String, String)>),
+    /// [Processing instruction]
+    /// (https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction) node
+    ProcessingInstruction(ProcessingInstructionData),
 
     /// Doctype node
-    Doctype(Doctype),
+    Doctype(DoctypeData),
 
     /// Document node
     Document(DocumentData),
@@ -34,9 +35,44 @@ pub enum NodeData {
     DocumentFragment,
 }
 
+/// Data specific to a text or comment node.
+#[derive(Debug, PartialEq, Clone)]
+pub struct TextData {
+    /// The contents of the text or comment node.
+    pub content: RefCell<String>,
+}
+impl TextData {
+    pub fn new(content: impl Into<String>) -> Self {
+        TextData {
+            content: RefCell::new(content.into()),
+        }
+    }
+}
+
+/// Data specific to a `ProcessingInstruction` node.
+///
+/// For more information on this node type, see: [ProcessingInstruction on MDN]
+/// (https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction).
+#[derive(Debug, PartialEq, Clone)]
+pub struct ProcessingInstructionData {
+    /// The target of this processing instruction.
+    pub target: RefCell<String>,
+
+    /// The data associated with this processing instruction.
+    pub data: RefCell<String>,
+}
+impl ProcessingInstructionData {
+    pub fn new(target: impl Into<String>, data: impl Into<String>) -> Self {
+        ProcessingInstructionData {
+            target: RefCell::new(target.into()),
+            data: RefCell::new(data.into()),
+        }
+    }
+}
+
 /// Data specific to doctype nodes.
 #[derive(Debug, PartialEq, Clone)]
-pub struct Doctype {
+pub struct DoctypeData {
     /// The name of the doctype
     pub name: String,
 
@@ -49,6 +85,7 @@ pub struct Doctype {
 
 /// Data specific to element nodes.
 #[derive(Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub struct ElementData {
     /// The namespace and local name of the element, such as `ns!(html)` and `body`.
     pub name: QualName,
@@ -59,6 +96,16 @@ pub struct ElementData {
     /// If the element is an HTML `<template>` element,
     /// the document fragment node that is the root of template contents.
     pub template_contents: Option<NodeRef>,
+}
+impl ElementData {
+    /// Creates a new empty element with a given tag name.
+    pub fn new(name: QualName) -> ElementData {
+        ElementData {
+            name,
+            attributes: Default::default(),
+            template_contents: None,
+        }
+    }
 }
 
 /// Data specific to document nodes.
@@ -94,7 +141,7 @@ impl DocumentData {
 /// (its descendants, its following siblings, and their descendants)
 /// but not other nodes in a tree.
 ///
-/// To avoid detroying nodes prematurely,
+/// To avoid destroying nodes prematurely,
 /// programs typically hold a strong reference to the root of a document
 /// until they’re done with that document.
 #[derive(Clone, Debug)]
@@ -233,13 +280,13 @@ impl NodeRef {
     /// Create a new text node.
     #[inline]
     pub fn new_text<T: Into<String>>(value: T) -> NodeRef {
-        NodeRef::new(NodeData::Text(RefCell::new(value.into())))
+        NodeRef::new(NodeData::Text(TextData::new(value)))
     }
 
     /// Create a new comment node.
     #[inline]
     pub fn new_comment<T: Into<String>>(value: T) -> NodeRef {
-        NodeRef::new(NodeData::Comment(RefCell::new(value.into())))
+        NodeRef::new(NodeData::Comment(TextData::new(value)))
     }
 
     /// Create a new processing instruction node.
@@ -249,10 +296,9 @@ impl NodeRef {
         T1: Into<String>,
         T2: Into<String>,
     {
-        NodeRef::new(NodeData::ProcessingInstruction(RefCell::new((
-            target.into(),
-            data.into(),
-        ))))
+        NodeRef::new(NodeData::ProcessingInstruction(
+            ProcessingInstructionData::new(target, data),
+        ))
     }
 
     /// Create a new doctype node.
@@ -263,7 +309,7 @@ impl NodeRef {
         T2: Into<String>,
         T3: Into<String>,
     {
-        NodeRef::new(NodeData::Doctype(Doctype {
+        NodeRef::new(NodeData::Doctype(DoctypeData {
             name: name.into(),
             public_id: public_id.into(),
             system_id: system_id.into(),
@@ -308,7 +354,7 @@ impl Node {
     #[inline]
     pub fn as_text(&self) -> Option<&RefCell<String>> {
         match self.data {
-            NodeData::Text(ref value) => Some(value),
+            NodeData::Text(ref value) => Some(&value.content),
             _ => None,
         }
     }
@@ -317,14 +363,14 @@ impl Node {
     #[inline]
     pub fn as_comment(&self) -> Option<&RefCell<String>> {
         match self.data {
-            NodeData::Comment(ref value) => Some(value),
+            NodeData::Comment(ref value) => Some(&value.content),
             _ => None,
         }
     }
 
     /// If this node is a document, return a reference to doctype-specific data.
     #[inline]
-    pub fn as_doctype(&self) -> Option<&Doctype> {
+    pub fn as_doctype(&self) -> Option<&DoctypeData> {
         match self.data {
             NodeData::Doctype(ref value) => Some(value),
             _ => None,
