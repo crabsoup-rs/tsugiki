@@ -5,7 +5,7 @@ use crate::attributes;
 use crate::tree::NodeRef;
 use html5ever::tokenizer::TokenizerOpts;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, TreeBuilderOpts, TreeSink};
-use html5ever::{self, Attribute, ExpandedName, QualName};
+use html5ever::{self, Attribute, QualName};
 use std::borrow::Cow;
 use std::rc::Rc;
 use tendril::stream::Utf8LossyDecoder;
@@ -201,7 +201,7 @@ struct Sink {
 
 impl TreeSink for Sink {
     type Output = NodeRef;
-    type ElemName<'a> = ExpandedName<'a>;
+    type ElemName<'a> = attributes::ExpandedName;
 
     fn finish(self) -> NodeRef {
         self.document_node
@@ -235,8 +235,12 @@ impl TreeSink for Sink {
     }
 
     #[inline]
-    fn elem_name<'a>(&self, target: &'a NodeRef) -> ExpandedName<'a> {
-        target.as_element().unwrap().name.expanded()
+    fn elem_name<'a>(&self, target: &'a NodeRef) -> attributes::ExpandedName {
+        let name = &target.as_element().unwrap().name;
+        attributes::ExpandedName {
+            ns: name.ns.clone(),
+            local: name.local.clone(),
+        }
     }
 
     #[inline]

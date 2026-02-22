@@ -1,3 +1,4 @@
+use html5ever::interface::ElemName;
 use html5ever::{LocalName, Namespace, Prefix};
 use indexmap::{IndexMap, map::Entry};
 
@@ -24,6 +25,14 @@ impl ExpandedName {
             ns: ns.into(),
             local: local.into(),
         }
+    }
+}
+impl ElemName for ExpandedName {
+    fn ns(&self) -> &Namespace {
+        &self.ns
+    }
+    fn local_name(&self) -> &LocalName {
+        &self.local
     }
 }
 
