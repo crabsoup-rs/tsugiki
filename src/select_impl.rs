@@ -19,6 +19,7 @@ use selectors::parser::{
 use selectors::parser::{ParseRelative, SelectorParseErrorKind};
 use selectors::{self, OpaqueElement, matching};
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::sync::Arc;
 use std::{fmt, fmt::Write, ops::Deref};
 
 /// The definition of whitespace per CSS Selectors Level 3 § 4.
@@ -519,6 +520,19 @@ impl SelectorSet {
             selection_cache: Default::default(),
         }
     }
+
+    /// Filter an element iterator, yielding those matching this list of selectors, using a cache.
+    #[inline]
+    pub fn filter_cached<I>(&self, iter: I, cache: SelectorCache) -> Select<I, &SelectorSet>
+    where
+        I: Iterator<Item = NodeDataRef<ElementData>>,
+    {
+        Select {
+            iter,
+            selectors: self,
+            selection_cache: cache,
+        }
+    }
 }
 
 impl Selector {
@@ -612,5 +626,40 @@ impl fmt::Debug for Selector {
 impl fmt::Debug for SelectorSet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
+    }
+}
+
+/// A trait that helps convert different types into selector sets
+pub trait IntoSelectorSet {
+    fn into_selector_set(self) -> Result<Arc<SelectorSet>, ()>;
+}
+
+impl<'a> IntoSelectorSet for &'a str {
+    fn into_selector_set(self) -> Result<Arc<SelectorSet>, ()> {
+        SelectorSet::compile(self).map(Arc::new)
+    }
+}
+
+impl IntoSelectorSet for String {
+    fn into_selector_set(self) -> Result<Arc<SelectorSet>, ()> {
+        SelectorSet::compile(&self).map(Arc::new)
+    }
+}
+
+impl IntoSelectorSet for Selector {
+    fn into_selector_set(self) -> Result<Arc<SelectorSet>, ()> {
+        Ok(SelectorSet(vec![self])).map(Arc::new)
+    }
+}
+
+impl IntoSelectorSet for SelectorSet {
+    fn into_selector_set(self) -> Result<Arc<SelectorSet>, ()> {
+        Ok(Arc::new(self))
+    }
+}
+
+impl IntoSelectorSet for Arc<SelectorSet> {
+    fn into_selector_set(self) -> Result<Arc<SelectorSet>, ()> {
+        Ok(self)
     }
 }

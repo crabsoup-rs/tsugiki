@@ -1,7 +1,7 @@
 use std::path::Path;
 use tempfile::TempDir;
-use tendril::{StrTendril, TendrilSink};
 use tendril::stream::Utf8LossyDecoder;
+use tendril::{StrTendril, TendrilSink};
 use tsugiki::dom::{Attributes, NodeRef, QualName, QuirksMode, local_name, ns};
 use tsugiki::select::SelectorSet;
 use tsugiki::traits::*;
@@ -287,7 +287,7 @@ fn parse_with_multiple_push_str_chunks() {
 
     let document = parser.finish();
     check_only_match(&document, "p.foo", "Foo");
-    
+
     assert_eq!(
         document.to_string(),
         "<html><head><title>Test case</title></head><body><p class=\"foo\">Foo</p></body></html>"

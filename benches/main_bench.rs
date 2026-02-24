@@ -1,8 +1,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use std::rc::Rc;
+use std::sync::Arc;
 use tendril::Tendril;
 use tendril::fmt::UTF8;
-use tsugiki::iter::Select;
+use tsugiki::iter::ElementIterator;
 use tsugiki::parse_document;
 use tsugiki::select::SelectorSet;
 use tsugiki::traits::NodeIterator;
@@ -62,18 +62,18 @@ fn criterion_benchmark(c: &mut Criterion) {
 
         for selector in SELECTORS {
             let parsed = parse_document(data.clone());
-            let selector = Rc::new(SelectorSet::compile(*selector).unwrap());
+            let selector = Arc::new(SelectorSet::compile(*selector).unwrap());
 
             c.bench_function(
                 &format!("select: {} / {selector:?}", file.path().display()),
                 |b| {
                     b.iter(|| {
-                        let result = Select {
-                            iter: parsed.inclusive_descendants().elements(),
-                            selectors: selector.clone(),
-                            selection_cache: Default::default(),
-                        }
-                        .count();
+                        let result = parsed
+                            .inclusive_descendants()
+                            .elements()
+                            .select_cached(selector.clone(), Default::default())
+                            .unwrap()
+                            .count();
                         assert_ne!(result, 0);
                         result
                     })

@@ -5,10 +5,11 @@
 #![allow(clippy::result_unit_err)]
 
 use crate::node_data_ref::NodeDataRef;
-use crate::select_impl::{SelectorCache, SelectorSet};
+use crate::select_impl::{IntoSelectorSet, SelectorCache, SelectorSet};
 use crate::tree::{ElementData, NodeRef, TextData};
 use std::borrow::Borrow;
 use std::iter::Rev;
+use std::sync::Arc;
 
 impl NodeRef {
     /// Return an iterator of references to this node and its ancestors.
@@ -158,7 +159,10 @@ impl NodeRef {
 
     /// Return an iterator of the inclusive descendants element that match the given selector list.
     #[inline]
-    pub fn select(&self, selectors: &str) -> Result<Select<Elements<Descendants>>, ()> {
+    pub fn select(
+        &self,
+        selectors: &str,
+    ) -> Result<Select<Elements<Descendants>, Arc<SelectorSet>>, ()> {
         self.inclusive_descendants().select(selectors)
     }
 
@@ -386,13 +390,13 @@ where
     S: Borrow<SelectorSet>,
 {
     /// The underlying iterator.
-    pub iter: I,
+    pub(crate) iter: I,
 
     /// The selectors to be matched.
-    pub selectors: S,
+    pub(crate) selectors: S,
 
     /// The selector cached used to speed up matching.
-    pub selection_cache: SelectorCache,
+    pub(crate) selection_cache: SelectorCache,
 }
 
 impl<I, S> Iterator for Select<I, S>
@@ -448,22 +452,49 @@ pub trait NodeIterator: Sized + Iterator<Item = NodeRef> {
         Comments(self)
     }
 
-    /// Filter this node iterator to elements maching the given selectors.
+    /// Filter this node iterator to elements matching the given selectors.
     #[inline]
-    fn select(self, selectors: &str) -> Result<Select<Elements<Self>>, ()> {
+    fn select(
+        self,
+        selectors: impl IntoSelectorSet,
+    ) -> Result<Select<Elements<Self>, Arc<SelectorSet>>, ()> {
         self.elements().select(selectors)
+    }
+
+    /// Filter this node iterator to elements matching the given selectors, with a cache.
+    #[inline]
+    fn select_cached(
+        self,
+        selectors: impl IntoSelectorSet,
+        cache: SelectorCache,
+    ) -> Result<Select<Elements<Self>, Arc<SelectorSet>>, ()> {
+        self.elements().select_cached(selectors, cache)
     }
 }
 
 /// Convenience methods for element iterators.
 pub trait ElementIterator: Sized + Iterator<Item = NodeDataRef<ElementData>> {
-    /// Filter this element iterator to elements maching the given selectors.
+    /// Filter this element iterator to elements matching the given selectors.
     #[inline]
-    fn select(self, selectors: &str) -> Result<Select<Self>, ()> {
-        SelectorSet::compile(selectors).map(|s| Select {
+    fn select(self, selectors: impl IntoSelectorSet) -> Result<Select<Self, Arc<SelectorSet>>, ()> {
+        Ok(Select {
             iter: self,
-            selectors: s,
+            selectors: selectors.into_selector_set()?,
             selection_cache: Default::default(),
+        })
+    }
+
+    /// Filter this element iterator to elements matching the given selectors, with a cache.
+    #[inline]
+    fn select_cached(
+        self,
+        selectors: impl IntoSelectorSet,
+        cache: SelectorCache,
+    ) -> Result<Select<Self, Arc<SelectorSet>>, ()> {
+        Ok(Select {
+            iter: self,
+            selectors: selectors.into_selector_set()?,
+            selection_cache: cache,
         })
     }
 }
