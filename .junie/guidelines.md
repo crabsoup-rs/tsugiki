@@ -1,6 +1,6 @@
-### Project Design: Kuchikiki
+### Project Design: Tsugiki
 
-Kuchikiki is an HTML manipulation library for Rust, designed for efficient tree traversal and modification, primarily leveraging the `html5ever` parser.
+Tsugiki is an HTML manipulation library for Rust, designed for efficient tree traversal and modification, primarily leveraging the `html5ever` parser. It is a fork of the Kuchiki library.
 
 #### Core Abstractions
 
@@ -21,7 +21,7 @@ Kuchikiki is an HTML manipulation library for Rust, designed for efficient tree 
 #### Tree Structure and Navigation
 
 - **Bidirectional Links**: Nodes maintain references to parents, children, and siblings, allowing for versatile traversal in any direction.
-- **Iterators**: Kuchikiki provides a rich set of iterators (implemented in `src/iter.rs`) for various traversal patterns:
+- **Iterators**: Tsugiki provides a rich set of iterators (implemented in `src/iter.rs`) for various traversal patterns:
   - `ancestors` / `inclusive_ancestors`
   - `descendants` / `inclusive_descendants`
   - `following_siblings` / `preceding_siblings`
@@ -30,15 +30,25 @@ Kuchikiki is an HTML manipulation library for Rust, designed for efficient tree 
 
 #### Parsing and Serialization
 
-- **`html5ever` Integration**: Parsing (in `src/parser.rs`) is handled by implementing `html5ever::tree_builder::TreeSink`, which constructs the Kuchikiki tree from parser events.
+- **`html5ever` Integration**: Parsing (in `src/parser.rs`) is handled by implementing `html5ever::tree_builder::TreeSink`, which constructs the Tsugiki tree from parser events.
 - **Serialization**: The library supports serializing nodes back to HTML, typically using `html5ever`'s serialization traits (see `src/serializer.rs`).
 
 #### CSS Selectors
 
-- **Support**: Integrated through the `selectors` crate (in `src/select.rs`).
+- **Support**: Integrated through the `selectors` crate (in `src/select_impl.rs`).
 - **Functionality**: Users can compile CSS selectors and use them to filter node iterators or find specific elements within a subtree.
 
 #### Performance and Low-Level Details
 
 - **`cell_extras.rs`**: Contains low-level optimizations using `unsafe` to allow limited access to values within `Cell<Option<Rc<T>>>` or `Cell<Option<Weak<T>>>` without moving them, which is critical for efficient tree link management.
 - **Non-recursive Drop**: `Node` implements a custom `Drop` trait with a non-recursive approach to avoid stack overflows when dropping deep trees.
+
+#### Codestyle
+
+- **Standard Rust Formatting**: Follows standard `rustfmt` conventions.
+- **Naming**: Use `CamelCase` for types and `snake_case` for functions, methods, and variables.
+- **Documentation**: Use triple-slash (`///`) comments for public APIs and double-slash (`//`) for internal notes. Follow KDoc-style documentation patterns.
+- **Linting**: Strict linting is enforced via `#![deny(missing_docs)]` in `src/lib.rs`.
+- **Explicit Imports**: Prefer explicit imports over glob imports, especially for external crates.
+- **Interior Mutability Patterns**: Use `borrow()` and `borrow_mut()` on `RefCell` judiciously, ensuring borrows are as short-lived as possible to avoid runtime panics.
+- **Performance-Conscious**: Avoid unnecessary allocations; prefer passing references or using `Cow` where appropriate.

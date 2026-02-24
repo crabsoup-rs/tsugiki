@@ -1,6 +1,6 @@
 use std::path::Path;
 use tempfile::TempDir;
-use tendril::TendrilSink;
+use tendril::{StrTendril, TendrilSink};
 use tendril::stream::Utf8LossyDecoder;
 use tsugiki::dom::{Attributes, NodeRef, QualName, QuirksMode, local_name, ns};
 use tsugiki::select::SelectorSet;
@@ -276,4 +276,31 @@ fn specificity() {
     assert!(specificities[0] == specificities[1]);
     assert!(specificities[0] > specificities[2]);
     assert!(specificities[1] > specificities[2]);
+}
+
+#[test]
+fn parse_with_multiple_push_str_chunks() {
+    let mut parser = Parser::new();
+    parser.push_str("<title>Test case</title>");
+    parser.push_str("<p class=foo>");
+    parser.push_str("Foo");
+
+    let document = parser.finish();
+    check_only_match(&document, "p.foo", "Foo");
+    
+    assert_eq!(
+        document.to_string(),
+        "<html><head><title>Test case</title></head><body><p class=\"foo\">Foo</p></body></html>"
+    );
+}
+
+#[test]
+fn parse_with_tendril_sink_api() {
+    let mut parser = Parser::new();
+    parser.process(StrTendril::from_slice("<title>Test case</title>"));
+    parser.process(StrTendril::from_slice("<p class=foo>"));
+    parser.process(StrTendril::from_slice("Foo"));
+
+    let document = tendril::TendrilSink::finish(parser);
+    check_only_match(&document, "p.foo", "Foo");
 }
