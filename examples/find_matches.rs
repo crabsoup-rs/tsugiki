@@ -12,7 +12,7 @@ fn main() {
     ";
     let css_selector = ".foo";
 
-    let document = tsugiki::parse_html().one(html);
+    let document = tsugiki::parse_document(html);
 
     for css_match in document.select(css_selector).unwrap() {
         // css_match is a NodeDataRef, but most of the interesting methods are

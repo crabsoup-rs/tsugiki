@@ -25,7 +25,6 @@ indexmap = "2.2.6"
 precomputed-hash = "0.1.1"
 selectors = "0.35"
 tendril = "0.5"
-tendril4 = { package = "tendril", version = "0.4" }
 
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }

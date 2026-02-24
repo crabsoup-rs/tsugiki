@@ -47,7 +47,7 @@ pub struct QualName {
     ///
     /// ```
     /// # fn main() {
-    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix};
+    /// # use tsugiki::dom::{QualName, Namespace, LocalName, Prefix};
     /// let qual = QualName::new_prefixed("furn", "https://furniture.example.com", "table");
     /// assert_eq!("furn", &qual.prefix.unwrap());
     /// # }
@@ -57,7 +57,7 @@ pub struct QualName {
     /// The namespace URL after resolution (e.g. `https://furniture.example.com` in example above).
     ///
     /// ```
-    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix, ns};
+    /// # use tsugiki::dom::{QualName, Namespace, LocalName, Prefix, ns};
     /// # fn main() {
     /// let qual = QualName::new_prefixed("furn", "https://furniture.example.com", "table");
     /// assert_eq!("https://furniture.example.com", &qual.ns);
@@ -76,7 +76,7 @@ pub struct QualName {
     /// The local name (e.g. `table` in `<furn:table>` above).
     ///
     /// ```
-    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix, local_name};
+    /// # use tsugiki::dom::{QualName, Namespace, LocalName, Prefix, local_name};
     /// # fn main() {
     /// let qual = QualName::new_prefixed("furn", "https://furniture.example.com", "table");
     /// assert_eq!("table", &qual.local);
@@ -136,7 +136,7 @@ impl QualName {
     /// For example, the `<furn:table>` tag from our example would resolve to:
     ///
     /// ```
-    /// # use tsugiki::{ExpandedName, Namespace, LocalName};
+    /// # use tsugiki::dom::{ExpandedName, Namespace, LocalName};
     /// # fn main() { let _name =
     /// ExpandedName {
     ///    ns: Namespace::from("https://furniture.example.com"),

@@ -1,11 +1,11 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use html5ever::tendril::Tendril;
-use html5ever::tendril::fmt::UTF8;
 use std::rc::Rc;
+use tendril::Tendril;
+use tendril::fmt::UTF8;
 use tsugiki::iter::Select;
-use tsugiki::parse_html;
+use tsugiki::parse_document;
 use tsugiki::select::SelectorSet;
-use tsugiki::traits::{NodeIterator, TendrilSink};
+use tsugiki::traits::NodeIterator;
 
 mod select_uncached {
     use std::borrow::Borrow;
@@ -57,11 +57,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         let data: Tendril<UTF8> = std::fs::read_to_string(file.path()).unwrap().into();
 
         c.bench_function(&format!("parse: {}", file.path().display()), |b| {
-            b.iter(|| parse_html().one(data.clone()))
+            b.iter(|| parse_document(data.clone()))
         });
 
         for selector in SELECTORS {
-            let parsed = parse_html().one(data.clone());
+            let parsed = parse_document(data.clone());
             let selector = Rc::new(SelectorSet::compile(*selector).unwrap());
 
             c.bench_function(

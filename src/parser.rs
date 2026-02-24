@@ -1,5 +1,5 @@
 //! This module handles the integration of `tsugiki` with `html5ever`, and encapsulating the
-//! internal implementation details of `html5ever` (such as tendrils and
+//! internal implementation details of `html5ever` (such as tendrils).
 
 use crate::attributes::Attributes;
 use crate::dom;
@@ -9,51 +9,50 @@ use html5ever::tree_builder::{ElementFlags, NodeOrText, TreeBuilderOpts, TreeSin
 use html5ever::{self, Attribute, QualName, tree_builder};
 use std::borrow::Cow;
 use std::rc::Rc;
-use tendril::stream::Utf8LossyDecoder;
 use tendril::{StrTendril, TendrilSink};
 
-/// The parser type used by this crate.
+/// The parser type used by this crate, allowing the incremental parsing of large files.
 ///
-/// This exists in order to support incremental parsing of very large files.
+/// This supports the [`tendril`](tendril) crate to allow for less copying during parsing, however
+/// using this is optional. You must independently import the `tendril` crate to use this API.
 pub struct Parser {
     underlying: html5ever::Parser<Sink>,
 }
 impl Parser {
-    /// A convenience function for parsing a single string.
-    pub fn one<T>(self, t: T) -> NodeRef
-    where
-        Self: Sized,
-        T: Into<StrTendril>,
-    {
-        self.underlying.one(t)
+    /// Creates a new parser configured to parse an HTML document.
+    pub fn new() -> Self {
+        ParseOpts::default().build()
     }
 
-    /// Wrap this parser into a `TendrilSink` that accepts UTF-8 bytes.
-    ///
-    /// Use this when your input is bytes that are known to be in the UTF-8 encoding.
-    /// Decoding is lossy, like `String::from_utf8_lossy`.
-    #[allow(clippy::wrong_self_convention)]
-    pub fn from_utf8(self) -> Utf8LossyDecoder<Self> {
-        Utf8LossyDecoder::new(self)
+    /// Creates a new parser configured to parse an HTML fragment.
+    pub fn new_fragment(ctx_name: dom::QualName, ctx_attr: Attributes) -> Self {
+        ParseOpts::default().build_fragment(ctx_name, ctx_attr)
+    }
+
+    /// Returns a new builder object.
+    pub fn builder() -> ParseOpts {
+        ParseOpts::default()
+    }
+
+    /// Pushes a string onto this parser.
+    pub fn push_str(&mut self, value: impl Into<String>) {
+        self.underlying.process(value.into().into())
+    }
+
+    /// Returns the finalized document.
+    pub fn finish(self) -> NodeRef {
+        self.underlying.finish()
+    }
+
+    /// A convenience function for parsing a single string.
+    pub fn parse(self, t: impl Into<String>) -> NodeRef {
+        self.underlying.one(t.into())
     }
 }
 impl TendrilSink<tendril::fmt::UTF8> for Parser {
     type Output = NodeRef;
     fn process(&mut self, t: StrTendril) {
         self.underlying.process(t)
-    }
-    fn error(&mut self, desc: Cow<'static, str>) {
-        self.underlying.error(desc)
-    }
-    fn finish(self) -> Self::Output {
-        self.underlying.finish()
-    }
-}
-impl tendril4::TendrilSink<tendril4::fmt::UTF8> for Parser {
-    type Output = NodeRef;
-    fn process(&mut self, t: tendril4::StrTendril) {
-        let converted = tendril::StrTendril::from_slice(&t);
-        self.underlying.process(converted)
     }
     fn error(&mut self, desc: Cow<'static, str>) {
         self.underlying.error(desc)
@@ -115,6 +114,54 @@ impl ParseOpts {
         self.on_parse_error.push(Rc::new(handler));
         self
     }
+
+    /// Builds a parser configured to parse an HTML document.
+    pub fn build(&self) -> Parser {
+        self.build_underlying(None)
+    }
+
+    /// Builds a parser configured to parse an HTML fragment.
+    pub fn build_fragment(&self, ctx_name: dom::QualName, ctx_attr: Attributes) -> Parser {
+        self.build_underlying(Some((ctx_name, ctx_attr)))
+    }
+
+    fn build_underlying(&self, fragment: Option<(dom::QualName, Attributes)>) -> Parser {
+        let sink = Sink {
+            document_node: NodeRef::new_document(),
+            on_parse_error: self.on_parse_error.clone(),
+        };
+        let html5opts = html5ever::ParseOpts {
+            tokenizer: self.tokenizer.clone(),
+            tree_builder: self.tree_builder,
+        };
+
+        if let Some((ctx_name, ctx_attr)) = fragment {
+            let mut converted_attrs = Vec::new();
+            for (name, attribute) in ctx_attr.map {
+                converted_attrs.push(Attribute {
+                    name: QualName {
+                        prefix: attribute.prefix,
+                        ns: name.ns,
+                        local: name.local,
+                    },
+                    value: attribute.value.into(),
+                });
+            }
+            Parser {
+                underlying: html5ever::parse_fragment(
+                    sink,
+                    html5opts,
+                    ctx_name.into_html5ever(),
+                    converted_attrs,
+                    true,
+                ),
+            }
+        } else {
+            Parser {
+                underlying: html5ever::parse_document(sink, html5opts),
+            }
+        }
+    }
 }
 impl Default for ParseOpts {
     fn default() -> Self {
@@ -145,68 +192,18 @@ impl AsRef<ParseOpts> for ParseOpts {
     }
 }
 
-/// Parse an HTML document with html5ever and the default configuration.
-pub fn parse_html() -> Parser {
-    parse_html_with_options(ParseOpts::default())
+/// Convenience function for parsing a HTML document from a string.
+pub fn parse_document(document: impl Into<String>) -> NodeRef {
+    Parser::new().parse(document)
 }
 
-/// Parse an HTML document with html5ever with custom configuration.
-pub fn parse_html_with_options(opts: impl AsRef<ParseOpts>) -> Parser {
-    let opts = opts.as_ref();
-    let sink = Sink {
-        document_node: NodeRef::new_document(),
-        on_parse_error: opts.on_parse_error.clone(),
-    };
-    let html5opts = html5ever::ParseOpts {
-        tokenizer: opts.tokenizer.clone(),
-        tree_builder: opts.tree_builder,
-    };
-    Parser {
-        underlying: html5ever::parse_document(sink, html5opts),
-    }
-}
-
-/// Parse an HTML fragment with html5ever and the default configuration.
-pub fn parse_fragment(ctx_name: dom::QualName, ctx_attr: Attributes) -> Parser {
-    parse_fragment_with_options(ParseOpts::default(), ctx_name, ctx_attr)
-}
-
-/// Parse an HTML fragment with html5ever with custom configuration.
-pub fn parse_fragment_with_options(
-    opts: impl AsRef<ParseOpts>,
+/// Convenience function for parsing a HTML document from a fragment.
+pub fn parse_fragment(
+    document: impl Into<String>,
     ctx_name: dom::QualName,
     ctx_attr: Attributes,
-) -> Parser {
-    let opts = opts.as_ref();
-    let sink = Sink {
-        document_node: NodeRef::new_document(),
-        on_parse_error: opts.on_parse_error.clone(),
-    };
-    let html5opts = html5ever::ParseOpts {
-        tokenizer: opts.tokenizer.clone(),
-        tree_builder: opts.tree_builder,
-    };
-
-    let mut converted_attrs = Vec::new();
-    for (name, attribute) in ctx_attr.map {
-        converted_attrs.push(Attribute {
-            name: QualName {
-                prefix: attribute.prefix,
-                ns: name.ns,
-                local: name.local,
-            },
-            value: attribute.value.into(),
-        });
-    }
-    Parser {
-        underlying: html5ever::parse_fragment(
-            sink,
-            html5opts,
-            ctx_name.into_html5ever(),
-            converted_attrs,
-            true,
-        ),
-    }
+) -> NodeRef {
+    Parser::new_fragment(ctx_name, ctx_attr).parse(document)
 }
 
 /// Receives new tree nodes during parsing.

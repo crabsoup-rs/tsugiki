@@ -1,9 +1,9 @@
 use tsugiki::dom::{Attribute, ExpandedName, NodeRef, QualName, local_name, ns};
-use tsugiki::parse_html;
+use tsugiki::parse_document;
 
 #[test]
 fn test_append() {
-    let document = parse_html().one("<div></div>");
+    let document = parse_document("<div></div>");
     let div = document.select_first("div").unwrap();
     let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     div.as_node().append(span.clone());
@@ -16,7 +16,7 @@ fn test_append() {
 
 #[test]
 fn test_prepend() {
-    let document = parse_html().one("<div><p></p></div>");
+    let document = parse_document("<div><p></p></div>");
     let div = document.select_first("div").unwrap();
     let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     div.as_node().prepend(span.clone());
@@ -30,7 +30,7 @@ fn test_prepend() {
 
 #[test]
 fn test_insert_after() {
-    let document = parse_html().one("<div><p></p></div>");
+    let document = parse_document("<div><p></p></div>");
     let p = document.select_first("p").unwrap();
     let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     p.as_node().insert_after(span.clone());
@@ -44,7 +44,7 @@ fn test_insert_after() {
 
 #[test]
 fn test_insert_before() {
-    let document = parse_html().one("<div><p></p></div>");
+    let document = parse_document("<div><p></p></div>");
     let p = document.select_first("p").unwrap();
     let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     p.as_node().insert_before(span.clone());
@@ -58,7 +58,7 @@ fn test_insert_before() {
 
 #[test]
 fn test_detach() {
-    let document = parse_html().one("<div><p></p></div>");
+    let document = parse_document("<div><p></p></div>");
     let p = document.select_first("p").unwrap();
     p.as_node().detach();
 

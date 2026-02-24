@@ -1,9 +1,11 @@
 use std::path::Path;
 use tempfile::TempDir;
+use tendril::TendrilSink;
+use tendril::stream::Utf8LossyDecoder;
 use tsugiki::dom::{Attributes, NodeRef, QualName, QuirksMode, local_name, ns};
 use tsugiki::select::SelectorSet;
 use tsugiki::traits::*;
-use tsugiki::{parse_fragment, parse_html};
+use tsugiki::{Parser, parse_document, parse_fragment};
 
 #[test]
 fn text_nodes() {
@@ -11,7 +13,7 @@ fn text_nodes() {
 <!doctype html>
 <title>Test case</title>
 <p>Content contains <b>Important</b> data</p>";
-    let document = parse_html().one(html);
+    let document = parse_document(html);
     let paragraph = document.select("p").unwrap().collect::<Vec<_>>();
     assert_eq!(paragraph.len(), 1);
     assert_eq!(
@@ -41,7 +43,7 @@ fn parse_and_serialize() {
 <!doctype html>
 <title>Test case</title>
 <p>Content";
-    let document = parse_html().one(html);
+    let document = parse_document(html);
     assert_eq!(
         document.as_document().unwrap().borrow().quirks_mode(),
         QuirksMode::NoQuirks
@@ -59,7 +61,7 @@ fn parse_and_serialize_with_template() {
 <!doctype html>
 <title>Test case</title>
 <template><p>Content</p></template>";
-    let document = parse_html().one(html);
+    let document = parse_document(html);
     assert_eq!(
         document.as_document().unwrap().borrow().quirks_mode(),
         QuirksMode::NoQuirks
@@ -76,7 +78,7 @@ fn parse_and_serialize_fragment() {
     let html = r"<tbody><tr><td>Test case";
 
     let ctx_name = QualName::new(ns!(html), local_name!("tbody"));
-    let document = parse_fragment(ctx_name, Attributes::default()).one(html);
+    let document = parse_fragment(html, ctx_name, Attributes::default());
     assert_eq!(
         document.as_document().unwrap().borrow().quirks_mode(),
         QuirksMode::NoQuirks
@@ -100,7 +102,9 @@ fn parse_file() {
     
 
 </body></html>";
-    let document = parse_html().from_utf8().from_file(&path).unwrap();
+    let document = Utf8LossyDecoder::new(Parser::new())
+        .from_file(&path)
+        .unwrap();
     assert_eq!(document.to_string(), html);
 }
 
@@ -111,10 +115,12 @@ fn serialize_and_read_file() {
     path.push("temp.html");
 
     let html = r"<!DOCTYPE html><html><head><title>Title</title></head><body>Body</body></html>";
-    let document = parse_html().one(html);
+    let document = parse_document(html);
     let _ = document.serialize_to_file(path.clone());
 
-    let document2 = parse_html().from_utf8().from_file(&path).unwrap();
+    let document2 = Utf8LossyDecoder::new(Parser::new())
+        .from_file(&path)
+        .unwrap();
     assert_eq!(document.to_string(), document2.to_string());
 }
 
@@ -127,7 +133,7 @@ fn select() {
 <p class=foo>Foo
 ";
 
-    let document = parse_html().one(html);
+    let document = parse_document(html);
     let matching = document.select("p.foo").unwrap().collect::<Vec<_>>();
     assert_eq!(matching.len(), 2);
     let child = matching[0].as_node().first_child().unwrap();
@@ -154,7 +160,7 @@ fn select_first() {
 <p class=foo>Baz
 ";
 
-    let document = parse_html().one(html);
+    let document = parse_document(html);
     let matching = document.select_first("p.foo").unwrap();
     let child = matching.as_node().first_child().unwrap();
     assert_eq!(&child.as_text().unwrap().borrow().content, "Foo\n");
@@ -184,7 +190,7 @@ fn select_advanced_has() {
         <p class="foo bar">Elem 2<a></a></p>
     "#;
 
-    let document = parse_html().one(html);
+    let document = parse_document(html);
 
     // check :has functionality
     check_only_match(&document, "p.foo:has(.test-has)", "Elem 1");
@@ -202,7 +208,7 @@ fn select_advanced_is() {
         <p class="foo baz no">Elem 2</p>
     "#;
 
-    let document = parse_html().one(html);
+    let document = parse_document(html);
 
     // check :is functionality
     check_only_match(&document, "p.foo:is(.bar)", "Elem 1");
@@ -227,7 +233,7 @@ fn select_advanced_nth_child() {
         <p class="foo baz no">Non-target elem</p>
     "#;
 
-    let document = parse_html().one(html);
+    let document = parse_document(html);
 
     // check :nth-child functionality
     check_only_match(&document, ".outer > p:first-child", "Elem 1");
@@ -247,7 +253,7 @@ fn to_string() {
     </body>
 </html>";
 
-    let document = parse_html().one(html);
+    let document = parse_document(html);
     assert_eq!(
         document
             .inclusive_descendants()

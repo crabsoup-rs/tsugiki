@@ -20,10 +20,7 @@ mod tree;
 
 pub mod iter;
 
-pub use parser::{
-    ParseOpts, Parser, parse_fragment, parse_fragment_with_options, parse_html,
-    parse_html_with_options,
-};
+pub use parser::{ParseOpts, Parser, parse_document, parse_fragment};
 
 /// Contains a list of types used to handle CSS selectors.
 pub mod select {
@@ -67,6 +64,4 @@ pub mod dom {
 /// Reexports traits that are useful for users of this crate.
 pub mod traits {
     pub use crate::iter::{ElementIterator, NodeIterator};
-    #[doc(no_inline)]
-    pub use tendril::TendrilSink;
 }
