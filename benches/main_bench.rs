@@ -3,18 +3,20 @@ use html5ever::tendril::Tendril;
 use html5ever::tendril::fmt::UTF8;
 use std::rc::Rc;
 use tsugiki::iter::Select;
+use tsugiki::parse_html;
+use tsugiki::select::SelectorSet;
 use tsugiki::traits::{NodeIterator, TendrilSink};
-use tsugiki::{Selectors, parse_html};
 
 mod select_uncached {
     use std::borrow::Borrow;
-    use tsugiki::{ElementData, NodeDataRef, Selectors};
+    use tsugiki::select::SelectorSet;
+    use tsugiki::{ElementData, NodeDataRef};
 
     /// An element iterator adaptor that yields elements matching given selectors.
-    pub struct Select<I, S = Selectors>
+    pub struct Select<I, S = SelectorSet>
     where
         I: Iterator<Item = NodeDataRef<ElementData>>,
-        S: Borrow<Selectors>,
+        S: Borrow<SelectorSet>,
     {
         /// The underlying iterator.
         pub iter: I,
@@ -26,7 +28,7 @@ mod select_uncached {
     impl<I, S> Iterator for Select<I, S>
     where
         I: Iterator<Item = NodeDataRef<ElementData>>,
-        S: Borrow<Selectors>,
+        S: Borrow<SelectorSet>,
     {
         type Item = NodeDataRef<ElementData>;
 
@@ -60,7 +62,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
         for selector in SELECTORS {
             let parsed = parse_html().one(data.clone());
-            let selector = Rc::new(Selectors::compile(*selector).unwrap());
+            let selector = Rc::new(SelectorSet::compile(*selector).unwrap());
 
             c.bench_function(
                 &format!("select: {} / {selector:?}", file.path().display()),

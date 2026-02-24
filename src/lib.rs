@@ -11,39 +11,58 @@ extern crate html5ever;
 
 mod attributes;
 mod cell_extras;
-pub mod iter;
 mod names;
 mod node_data_ref;
 mod parser;
-mod select;
+mod select_impl;
 mod serializer;
 mod tree;
 
+pub mod iter;
+
 pub use attributes::{Attribute, Attributes};
-pub use names::{ExpandedName, QualName};
+pub use names::{ExpandedName, LocalName, Namespace, Prefix, QualName};
 pub use node_data_ref::NodeDataRef;
 pub use parser::{
     ParseOpts, Parser, parse_fragment, parse_fragment_with_options, parse_html,
     parse_html_with_options,
 };
-pub use select::{Selector, SelectorCache, Selectors, Specificity};
 pub use tree::{
     DoctypeData, DocumentData, ElementData, Node, NodeData, NodeRef, ProcessingInstructionData,
     QuirksMode, TextData,
 };
 
-#[doc(inline)]
-pub use html5ever::{
-    LocalName, Namespace, Prefix, local_name, namespace_prefix, namespace_url, ns,
-};
-
-/// This module contains a number of traits that are useful when using Tsugiki.
-/// It can be used with:
+/// Makes a const [`LocalName`] from a literal.
 ///
-/// ```rust
-/// use tsugiki::traits::*;
-/// ```
+/// The string given must be one of the static HTML tags supported by the underlying HTML library.
+pub use html5ever::local_name;
+
+/// Makes a const [`Namespace`] from a standard HTML namespace
+/// prefix.
+///
+/// The string given must be one of the namespaces supported by the underlying HTML library.
+pub use html5ever::ns;
+
+/// Makes a const [`Namespace`] from a literal containing a namespace URL.
+///
+/// The string given must be one of the namespaces supported by the underlying HTML library.
+pub use html5ever::namespace_url;
+
+/// Makes a const [`Prefix`] from a literal containing a standard HTML namespace
+/// prefix.
+///
+/// The string given must be one of the namespaces supported by the underlying HTML library.
+pub use html5ever::namespace_prefix;
+
+/// Contains a list of types used to handle CSS selectors.
+pub mod select {
+    #[doc(inline)]
+    pub use crate::select_impl::{Selector, SelectorCache, SelectorSet, Specificity};
+}
+
+/// Reexports traits that are useful for users of this crate.
 pub mod traits {
     pub use crate::iter::{ElementIterator, NodeIterator};
+    #[doc(no_inline)]
     pub use tendril::TendrilSink;
 }

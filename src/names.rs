@@ -1,5 +1,4 @@
 use html5ever::interface::ElemName;
-use html5ever::{LocalName, Namespace, Prefix};
 
 /// A fully qualified name (with a namespace), used to depict names of tags and attributes.
 ///
@@ -223,3 +222,30 @@ impl ElemName for ExpandedName {
         &self.local
     }
 }
+
+/// Represents the namespace prefix part of an HTML tag.
+///
+/// See the [QualName::prefix](QualName#structfield.prefix) field for more information.
+///
+/// While this is a type alias to the `Atom` type of `string_cache`, `tsugiki` makes no guarantees
+/// as to the version of this crate, only that it remains semver compatible with previous versions
+/// of `tsugiki`.
+pub use html5ever::Prefix;
+
+/// Represents the namespace URL of an HTML tag.
+///
+/// See the [QualName::ns](QualName#structfield.ns) field for more information.
+///
+/// While this is a type alias to the `Atom` type of `string_cache`, `tsugiki` makes no guarantees
+/// as to the version of this crate, only that it remains semver compatible with previous versions
+/// of `tsugiki`.
+pub use html5ever::Namespace;
+
+/// Represents the local name part of an HTML tag.
+///
+/// See the [QualName::local](QualName#structfield.local) field for more information.
+///
+/// While this is a type alias to the `Atom` type of `string_cache`, `tsugiki` makes no guarantees
+/// as to the version of this crate, only that it remains semver compatible with previous versions
+/// of `tsugiki`.
+pub use html5ever::LocalName;

@@ -447,7 +447,7 @@ impl SelectorCache {
 }
 
 /// A pre-compiled list of CSS Selectors.
-pub struct Selectors(pub Vec<Selector>);
+pub struct SelectorSet(pub Vec<Selector>);
 
 /// A pre-compiled CSS Selector.
 pub struct Selector(GenericSelector<KuchikiSelectors>);
@@ -461,17 +461,17 @@ pub struct Selector(GenericSelector<KuchikiSelectors>);
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Specificity(u32);
 
-impl Selectors {
+impl SelectorSet {
     /// Compile a list of selectors. This may fail on syntax errors or unsupported selectors.
     #[inline]
-    pub fn compile(s: &str) -> Result<Selectors, ()> {
+    pub fn compile(s: &str) -> Result<SelectorSet, ()> {
         let mut input = cssparser::ParserInput::new(s);
         match SelectorList::parse(
             &KuchikiParser,
             &mut cssparser::Parser::new(&mut input),
             ParseRelative::No,
         ) {
-            Ok(list) => Ok(Selectors(
+            Ok(list) => Ok(SelectorSet(
                 list.slice().into_iter().cloned().map(Selector).collect(),
             )),
             Err(_) => Err(()),
@@ -509,7 +509,7 @@ impl Selectors {
 
     /// Filter an element iterator, yielding those matching this list of selectors.
     #[inline]
-    pub fn filter<I>(&self, iter: I) -> Select<I, &Selectors>
+    pub fn filter<I>(&self, iter: I) -> Select<I, &SelectorSet>
     where
         I: Iterator<Item = NodeDataRef<ElementData>>,
     {
@@ -574,11 +574,11 @@ impl Selector {
     }
 }
 
-impl ::std::str::FromStr for Selectors {
+impl ::std::str::FromStr for SelectorSet {
     type Err = ();
     #[inline]
-    fn from_str(s: &str) -> Result<Selectors, ()> {
-        Selectors::compile(s)
+    fn from_str(s: &str) -> Result<SelectorSet, ()> {
+        SelectorSet::compile(s)
     }
 }
 
@@ -588,7 +588,7 @@ impl fmt::Display for Selector {
     }
 }
 
-impl fmt::Display for Selectors {
+impl fmt::Display for SelectorSet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut iter = self.0.iter();
         let first = iter
@@ -609,7 +609,7 @@ impl fmt::Debug for Selector {
     }
 }
 
-impl fmt::Debug for Selectors {
+impl fmt::Debug for SelectorSet {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }

@@ -1,8 +1,9 @@
 use std::path::Path;
 use tempfile::TempDir;
+use tsugiki::select::SelectorSet;
 use tsugiki::traits::*;
 use tsugiki::{Attributes, NodeRef, QualName, QuirksMode, local_name, ns};
-use tsugiki::{Selectors, parse_fragment, parse_html};
+use tsugiki::{parse_fragment, parse_html};
 
 #[test]
 fn text_nodes() {
@@ -137,7 +138,7 @@ fn select() {
         Some("foo")
     );
 
-    let selectors = Selectors::compile("p.foo").unwrap();
+    let selectors = SelectorSet::compile("p.foo").unwrap();
     let matching2 = selectors
         .filter(document.descendants().elements())
         .collect::<Vec<_>>();
@@ -259,7 +260,7 @@ fn to_string() {
 
 #[test]
 fn specificity() {
-    let selectors = Selectors::compile(".example, :first-child, div").unwrap();
+    let selectors = SelectorSet::compile(".example, :first-child, div").unwrap();
     let specificities = selectors
         .0
         .iter()

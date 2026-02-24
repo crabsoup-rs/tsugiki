@@ -1,12 +1,11 @@
-//! Node iterators
+//! Contains the iterator types used throughout this crate.
 
 // Addressing this lint is a semver-breaking change.
 // Remove this once the issue has been addressed.
 #![allow(clippy::result_unit_err)]
 
-use crate::SelectorCache;
 use crate::node_data_ref::NodeDataRef;
-use crate::select::Selectors;
+use crate::select_impl::{SelectorCache, SelectorSet};
 use crate::tree::{ElementData, NodeRef, TextData};
 use std::borrow::Borrow;
 use std::iter::Rev;
@@ -381,10 +380,10 @@ filter_map_like_iterator! {
 }
 
 /// An element iterator adaptor that yields elements maching given selectors.
-pub struct Select<I, S = Selectors>
+pub struct Select<I, S = SelectorSet>
 where
     I: Iterator<Item = NodeDataRef<ElementData>>,
-    S: Borrow<Selectors>,
+    S: Borrow<SelectorSet>,
 {
     /// The underlying iterator.
     pub iter: I,
@@ -399,7 +398,7 @@ where
 impl<I, S> Iterator for Select<I, S>
 where
     I: Iterator<Item = NodeDataRef<ElementData>>,
-    S: Borrow<Selectors>,
+    S: Borrow<SelectorSet>,
 {
     type Item = NodeDataRef<ElementData>;
 
@@ -416,7 +415,7 @@ where
 impl<I, S> DoubleEndedIterator for Select<I, S>
 where
     I: DoubleEndedIterator<Item = NodeDataRef<ElementData>>,
-    S: Borrow<Selectors>,
+    S: Borrow<SelectorSet>,
 {
     #[inline]
     fn next_back(&mut self) -> Option<NodeDataRef<ElementData>> {
@@ -461,7 +460,7 @@ pub trait ElementIterator: Sized + Iterator<Item = NodeDataRef<ElementData>> {
     /// Filter this element iterator to elements maching the given selectors.
     #[inline]
     fn select(self, selectors: &str) -> Result<Select<Self>, ()> {
-        Selectors::compile(selectors).map(|s| Select {
+        SelectorSet::compile(selectors).map(|s| Select {
             iter: self,
             selectors: s,
             selection_cache: Default::default(),
