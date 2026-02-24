@@ -33,7 +33,9 @@ pub use tree::{
 };
 
 #[doc(inline)]
-pub use html5ever::{LocalName, Namespace, Prefix, local_name, namespace_prefix, ns};
+pub use html5ever::{
+    LocalName, Namespace, Prefix, local_name, namespace_prefix, namespace_url, ns,
+};
 
 /// This module contains a number of traits that are useful when using Tsugiki.
 /// It can be used with:

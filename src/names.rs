@@ -3,10 +3,13 @@ use html5ever::{LocalName, Namespace, Prefix};
 
 /// A fully qualified name (with a namespace), used to depict names of tags and attributes.
 ///
-/// Namespaces can be used to differentiate between similar XML fragments. For example:
+/// # Namespaces 101
+///
+/// Namespaces can be used to differentiate between different XML schemas that share tags with
+/// the same name. For example:
 ///
 /// ```text
-/// // HTML
+/// <!-- HTML -->
 /// <table>
 ///   <tr>
 ///     <td>Apples</td>
@@ -14,7 +17,7 @@ use html5ever::{LocalName, Namespace, Prefix};
 ///   </tr>
 /// </table>
 ///
-/// // Furniture XML
+/// <!-- Furniture XML -->
 /// <table>
 ///   <name>African Coffee Table</name>
 ///   <width>80</width>
@@ -22,129 +25,69 @@ use html5ever::{LocalName, Namespace, Prefix};
 /// </table>
 /// ```
 ///
-/// Without XML namespaces, we can't use those two fragments in the same document
-/// at the same time. However if we declare a namespace we could instead say:
+/// Without XML namespaces, we can't use those two fragments in the same document at the same time.
+/// However, namespaces allow you to distinguish which tag you actually mean. For example:
 ///
 /// ```text
-///
-/// // Furniture XML
-/// <furn:table xmlns:furn="https://furniture.rs">
+/// <!-- Furniture XML -->
+/// <furn:table xmlns:furn="https://furniture.example.com">
 ///   <furn:name>African Coffee Table</furn:name>
 ///   <furn:width>80</furn:width>
 ///   <furn:length>120</furn:length>
 /// </furn:table>
 /// ```
 ///
-/// and bind the prefix `furn` to a different namespace.
-///
-/// For this reason we parse names that contain a colon in the following way:
-///
-/// ```text
-/// <furn:table>
-///    |    |
-///    |    +- local name
-///    |
-///  prefix (when resolved gives namespace_url `https://furniture.rs`)
-/// ```
-///
-/// NOTE: `Prefix`, `LocalName` and `Prefix` all implement `Deref<str>`.
+/// In this example, the `<furn:table>` tag has the namespace `furn`, which resolves to the
+/// namespace URL `https://furniture.example.com`.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct QualName {
-    /// The prefix of qualified (e.g. `furn` in `<furn:table>` above).
-    /// Optional (since some namespaces can be empty or inferred), and
-    /// only useful for namespace resolution (since different prefix
-    /// can still resolve to same namespace)
+    /// The prefix of qualified (e.g. `furn` in the example above).
+    ///
+    /// This field is optional because namespaces can be empty or inferred, and are most useful
+    /// only once resolved to a namespace URL.
     ///
     /// ```
-    ///
     /// # fn main() {
-    /// use tsugiki::{QualName, Namespace, LocalName, Prefix};
-    ///
-    /// let qual = QualName::new(
-    ///     Some(Prefix::from("furn")),
-    ///     Namespace::from("https://furniture.rs"),
-    ///     LocalName::from("table"),
-    /// );
-    ///
+    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix};
+    /// let qual = QualName::new_prefixed("furn", "https://furniture.example.com", "table");
     /// assert_eq!("furn", &qual.prefix.unwrap());
-    ///
     /// # }
     /// ```
     pub prefix: Option<Prefix>,
-    /// The namespace after resolution (e.g. `https://furniture.rs` in example above).
+
+    /// The namespace URL after resolution (e.g. `https://furniture.example.com` in example above).
     ///
     /// ```
-    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix};
-    ///
+    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix, ns};
     /// # fn main() {
-    /// # let qual = QualName::new(
-    /// #    Some(Prefix::from("furn")),
-    /// #    Namespace::from("https://furniture.rs"),
-    /// #    LocalName::from("table"),
-    /// # );
+    /// let qual = QualName::new_prefixed("furn", "https://furniture.example.com", "table");
+    /// assert_eq!("https://furniture.example.com", &qual.ns);
     ///
-    /// assert_eq!("https://furniture.rs", &qual.ns);
+    /// let qual = QualName::new("http://www.w3.org/1999/xhtml", "table");
+    /// assert!(
+    ///     match qual.ns {
+    ///         ns!(html) => true,
+    ///         _ => false,
+    ///     }
+    /// );
     /// # }
     /// ```
-    ///
-    /// When matching namespaces used by HTML we can use `ns!` macro.
-    /// Although keep in mind that ns! macro only works with namespaces
-    /// that are present in HTML spec (like `html`, `xmlns`, `svg`, etc.).
-    ///
-    /// ```
-    /// # #[macro_use] extern crate tsugiki;
-    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix};
-    ///
-    /// let html_table = QualName::new(
-    ///    None,
-    ///    ns!(html),
-    ///    LocalName::from("table"),
-    /// );
-    ///
-    /// assert!(
-    ///   match html_table.ns {
-    ///     ns!(html) => true,
-    ///     _ => false,
-    ///   }
-    /// );
-    ///
-    /// ```
     pub ns: Namespace,
+
     /// The local name (e.g. `table` in `<furn:table>` above).
     ///
     /// ```
-    /// # use tsugiki::{QualName, Namespace, LocalName, Prefix};
-    ///
-    /// # fn main() {
-    /// # let qual = QualName::new(
-    /// #    Some(Prefix::from("furn")),
-    /// #    Namespace::from("https://furniture.rs"),
-    /// #    LocalName::from("table"),
-    /// # );
-    ///
-    /// assert_eq!("table", &qual.local);
-    /// # }
-    /// ```
-    /// When matching local name we can also use the `local_name!` macro:
-    ///
-    /// ```
     /// # use tsugiki::{QualName, Namespace, LocalName, Prefix, local_name};
-    ///
-    /// # let qual = QualName::new(
-    /// #    Some(Prefix::from("furn")),
-    /// #    Namespace::from("https://furniture.rs"),
-    /// #    LocalName::from("table"),
-    /// # );
-    ///
-    /// // Initialize qual to furniture example
-    ///
+    /// # fn main() {
+    /// let qual = QualName::new_prefixed("furn", "https://furniture.example.com", "table");
+    /// assert_eq!("table", &qual.local);
     /// assert!(
-    ///   match qual.local {
-    ///     local_name!("table") => true,
-    ///     _ => false,
-    ///   }
+    ///     match qual.local {
+    ///         local_name!("table") => true,
+    ///         _ => false,
+    ///     }
     /// );
-    ///
+    /// # }
     /// ```
     pub local: LocalName,
 }
@@ -162,82 +105,45 @@ impl ElemName for &QualName {
 }
 
 impl QualName {
-    /// Basic constructor function.
-    ///
-    /// First let's try it for the following example where `QualName`
-    /// is defined as:
-    /// ```text
-    /// <furn:table> <!-- namespace url is https://furniture.rs -->
-    /// ```
-    ///
-    /// Given this definition, we can define `QualName` using strings.
-    ///
-    /// ```
-    /// use tsugiki::{QualName, Namespace, LocalName, Prefix};
-    ///
-    /// # fn main() {
-    /// let qual_name = QualName::new(
-    ///     Some(Prefix::from("furn")),
-    ///     Namespace::from("https://furniture.rs"),
-    ///     LocalName::from("table"),
-    /// );
-    /// # }
-    /// ```
-    ///
-    /// If we were instead to construct this element instead:
-    ///
-    /// ```text
-    ///
-    /// <table>
-    ///  ^^^^^---- no prefix and thus default html namespace
-    ///
-    /// ```
-    ///
-    /// Or could define it using macros, like so:
-    ///
-    /// ```
-    /// #[macro_use] extern crate tsugiki;
-    /// use tsugiki::{QualName, Namespace, LocalName, Prefix};
-    ///
-    /// # fn main() {
-    /// let qual_name = QualName::new(
-    ///     None,
-    ///     ns!(html),
-    ///     local_name!("table")
-    /// );
-    /// # }
-    /// ```
-    ///
-    /// Let's analyse the above example.
-    /// Since we have no prefix its value is None. Second we have html namespace.
-    /// In html5ever html namespaces are supported out of the box,
-    /// we can write `ns!(html)` instead of typing `Namespace::from("http://www.w3.org/1999/xhtml")`.
-    /// Local name is also one of the HTML elements local names, so can
-    /// use `local_name!("table")` macro.
-    ///
+    /// Constructs a qualified element name with no prefix.
     #[inline]
-    pub fn new(prefix: Option<Prefix>, ns: Namespace, local: LocalName) -> QualName {
-        QualName { prefix, ns, local }
+    pub fn new(ns: impl Into<Namespace>, local: impl Into<LocalName>) -> Self {
+        QualName {
+            prefix: None,
+            ns: ns.into(),
+            local: local.into(),
+        }
+    }
+
+    /// Constructs a qualified element name with an explicit prefix.
+    #[inline]
+    pub fn new_prefixed(
+        prefix: impl Into<Prefix>,
+        ns: impl Into<Namespace>,
+        local: impl Into<LocalName>,
+    ) -> QualName {
+        QualName {
+            prefix: Some(prefix.into()),
+            ns: ns.into(),
+            local: local.into(),
+        }
     }
 
     /// Take a reference of `self` as an `ExpandedName`, dropping the unresolved prefix.
     ///
-    /// In XML and HTML prefixes are only used to extract the relevant namespace URI.
-    /// Expanded name only contains resolved namespace and tag name, which are only
-    /// relevant parts of an XML or HTML tag and attribute name respectively.
+    /// In XML and HTML, prefixes are only used to extract the relevant namespace URI. Expanded
+    /// names only contain the resolved namespace and tag name.
     ///
-    /// In lieu of our XML Namespace example
+    /// For example, the `<furn:table>` tag from our example would resolve to:
     ///
-    /// ```text
-    /// <furn:table> <!-- namespace url is https://furniture.rs -->
     /// ```
-    /// For it the expanded name would become roughly equivalent to:
-    ///
-    /// ```text
+    /// # use tsugiki::{ExpandedName, Namespace, LocalName};
+    /// # fn main() { let _name =
     /// ExpandedName {
-    ///    ns: "https://furniture.rs",
-    ///    local: "table",
+    ///    ns: Namespace::from("https://furniture.example.com"),
+    ///    local: LocalName::from("table"),
     /// }
+    /// # ; }
     /// ```
     ///
     #[inline]
@@ -284,18 +190,25 @@ impl QualName {
     }
 }
 
-/// <https://www.w3.org/TR/REC-xml-names/#dt-expname>
+/// An expanded tag name, containing only the namespace URL and local name.
+///
+/// This is the fully resolved form of an XML or HTML tag name, as the prefix is arbitrary and can
+/// be set differently in each document.
 #[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct ExpandedName {
-    /// Namespace URL
+    /// The namespace URL of the tag.
+    ///
+    /// See the [QualName::ns](QualName#structfield.ns) field for more information.
     pub ns: Namespace,
-    /// "Local" part of the name
+    /// The local name of the tag.
+    ///
+    /// See the [QualName::local](QualName#structfield.local) field for more information.
     pub local: LocalName,
 }
 
 impl ExpandedName {
-    /// Trivial constructor
-    pub fn new<N: Into<Namespace>, L: Into<LocalName>>(ns: N, local: L) -> Self {
+    /// Create a new expanded name.
+    pub fn new(ns: impl Into<Namespace>, local: impl Into<LocalName>) -> Self {
         ExpandedName {
             ns: ns.into(),
             local: local.into(),

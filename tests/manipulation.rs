@@ -4,7 +4,7 @@ use tsugiki::{Attribute, ExpandedName, NodeRef, QualName, local_name, ns, parse_
 fn test_append() {
     let document = parse_html().one("<div></div>");
     let div = document.select_first("div").unwrap();
-    let span = NodeRef::new_element(QualName::new(None, ns!(html), local_name!("span")), vec![]);
+    let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     div.as_node().append(span.clone());
 
     assert_eq!(div.as_node().first_child().unwrap(), span);
@@ -17,7 +17,7 @@ fn test_append() {
 fn test_prepend() {
     let document = parse_html().one("<div><p></p></div>");
     let div = document.select_first("div").unwrap();
-    let span = NodeRef::new_element(QualName::new(None, ns!(html), local_name!("span")), vec![]);
+    let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     div.as_node().prepend(span.clone());
 
     assert_eq!(div.as_node().first_child().unwrap(), span);
@@ -31,7 +31,7 @@ fn test_prepend() {
 fn test_insert_after() {
     let document = parse_html().one("<div><p></p></div>");
     let p = document.select_first("p").unwrap();
-    let span = NodeRef::new_element(QualName::new(None, ns!(html), local_name!("span")), vec![]);
+    let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     p.as_node().insert_after(span.clone());
 
     assert_eq!(p.as_node().next_sibling().unwrap(), span);
@@ -45,7 +45,7 @@ fn test_insert_after() {
 fn test_insert_before() {
     let document = parse_html().one("<div><p></p></div>");
     let p = document.select_first("p").unwrap();
-    let span = NodeRef::new_element(QualName::new(None, ns!(html), local_name!("span")), vec![]);
+    let span = NodeRef::new_element(QualName::new(ns!(html), local_name!("span")), vec![]);
     p.as_node().insert_before(span.clone());
 
     assert_eq!(p.as_node().previous_sibling().unwrap(), span);
@@ -70,7 +70,7 @@ fn test_detach() {
 
 #[test]
 fn test_element_data() {
-    let name = QualName::new(None, ns!(html), local_name!("div"));
+    let name = QualName::new(ns!(html), local_name!("div"));
     let element = NodeRef::new_element(
         name.clone(),
         vec![(
