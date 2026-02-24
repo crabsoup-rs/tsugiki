@@ -20,8 +20,7 @@ pub enum NodeData {
     /// Comment node
     Comment(RefCell<TextData>),
 
-    /// [Processing instruction]
-    /// (https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction) node
+    /// [Processing instruction](https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction) node
     ProcessingInstruction(RefCell<ProcessingInstructionData>),
 
     /// Doctype node
@@ -51,8 +50,8 @@ impl TextData {
 
 /// Data specific to a `ProcessingInstruction` node.
 ///
-/// For more information on this node type, see: [ProcessingInstruction on MDN]
-/// (https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction).
+/// For more information on this node type, see:
+/// [ProcessingInstruction on MDN](https://developer.mozilla.org/en-US/docs/Web/API/ProcessingInstruction).
 #[derive(Debug, PartialEq, Clone)]
 pub struct ProcessingInstructionData {
     /// The target of this processing instruction.
