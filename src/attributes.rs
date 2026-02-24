@@ -1,4 +1,4 @@
-use crate::ExpandedName;
+use crate::dom::ExpandedName;
 use html5ever::{LocalName, Prefix};
 use indexmap::{IndexMap, map::Entry};
 

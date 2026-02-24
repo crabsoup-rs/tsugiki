@@ -9,8 +9,8 @@ use tsugiki::traits::{NodeIterator, TendrilSink};
 
 mod select_uncached {
     use std::borrow::Borrow;
+    use tsugiki::dom::{ElementData, NodeDataRef};
     use tsugiki::select::SelectorSet;
-    use tsugiki::{ElementData, NodeDataRef};
 
     /// An element iterator adaptor that yields elements matching given selectors.
     pub struct Select<I, S = SelectorSet>

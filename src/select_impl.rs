@@ -2,8 +2,8 @@
 // Remove this once the issue has been addressed.
 #![allow(clippy::result_unit_err)]
 
-use crate::ExpandedName;
 use crate::iter::{NodeIterator, Select};
+use crate::names::ExpandedName;
 use crate::node_data_ref::NodeDataRef;
 use crate::tree::{ElementData, Node, NodeData, NodeRef};
 use cssparser::{self, CowRcStr, ParseError, SourceLocation, ToCss};

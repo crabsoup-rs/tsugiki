@@ -1,7 +1,7 @@
 use crate::attributes::{Attribute, Attributes};
 use crate::cell_extras::*;
 use crate::iter::NodeIterator;
-use crate::{ExpandedName, QualName};
+use crate::names::{ExpandedName, QualName};
 use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::ops::Deref;

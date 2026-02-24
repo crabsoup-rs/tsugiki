@@ -1,4 +1,5 @@
-use tsugiki::{Attribute, ExpandedName, NodeRef, QualName, local_name, ns, parse_html};
+use tsugiki::dom::{Attribute, ExpandedName, NodeRef, QualName, local_name, ns};
+use tsugiki::parse_html;
 
 #[test]
 fn test_append() {

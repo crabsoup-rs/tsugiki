@@ -1,8 +1,9 @@
 //! This module handles the integration of `tsugiki` with `html5ever`, and encapsulating the
 //! internal implementation details of `html5ever` (such as tendrils and
 
+use crate::attributes::Attributes;
+use crate::dom;
 use crate::tree::{NodeRef, QuirksMode};
-use crate::{Attributes, attributes};
 use html5ever::tokenizer::TokenizerOpts;
 use html5ever::tree_builder::{ElementFlags, NodeOrText, TreeBuilderOpts, TreeSink};
 use html5ever::{self, Attribute, QualName, tree_builder};
@@ -166,14 +167,14 @@ pub fn parse_html_with_options(opts: impl AsRef<ParseOpts>) -> Parser {
 }
 
 /// Parse an HTML fragment with html5ever and the default configuration.
-pub fn parse_fragment(ctx_name: crate::QualName, ctx_attr: Attributes) -> Parser {
+pub fn parse_fragment(ctx_name: dom::QualName, ctx_attr: Attributes) -> Parser {
     parse_fragment_with_options(ParseOpts::default(), ctx_name, ctx_attr)
 }
 
 /// Parse an HTML fragment with html5ever with custom configuration.
 pub fn parse_fragment_with_options(
     opts: impl AsRef<ParseOpts>,
-    ctx_name: crate::QualName,
+    ctx_name: dom::QualName,
     ctx_attr: Attributes,
 ) -> Parser {
     let opts = opts.as_ref();
@@ -216,7 +217,7 @@ struct Sink {
 
 impl TreeSink for Sink {
     type Output = NodeRef;
-    type ElemName<'a> = crate::ExpandedName;
+    type ElemName<'a> = dom::ExpandedName;
 
     fn finish(self) -> NodeRef {
         self.document_node
@@ -255,9 +256,9 @@ impl TreeSink for Sink {
     }
 
     #[inline]
-    fn elem_name<'a>(&self, target: &'a NodeRef) -> crate::ExpandedName {
+    fn elem_name<'a>(&self, target: &'a NodeRef) -> dom::ExpandedName {
         let name = &target.as_element().unwrap().borrow().name;
-        crate::ExpandedName {
+        dom::ExpandedName {
             ns: name.ns.clone(),
             local: name.local.clone(),
         }
@@ -271,7 +272,7 @@ impl TreeSink for Sink {
         _flags: ElementFlags,
     ) -> NodeRef {
         NodeRef::new_element(
-            crate::QualName::from_html5ever(name),
+            dom::QualName::from_html5ever(name),
             attrs.into_iter().map(|attr| {
                 let Attribute {
                     name: QualName { prefix, ns, local },
@@ -279,8 +280,8 @@ impl TreeSink for Sink {
                 } = attr;
                 let value = String::from(value);
                 (
-                    crate::ExpandedName { ns, local },
-                    attributes::Attribute { prefix, value },
+                    dom::ExpandedName { ns, local },
+                    dom::Attribute { prefix, value },
                 )
             }),
         )
@@ -351,10 +352,10 @@ impl TreeSink for Sink {
         {
             attributes
                 .map
-                .entry(crate::ExpandedName { ns, local })
+                .entry(dom::ExpandedName { ns, local })
                 .or_insert_with(|| {
                     let value = String::from(value);
-                    attributes::Attribute { prefix, value }
+                    dom::Attribute { prefix, value }
                 });
         }
     }

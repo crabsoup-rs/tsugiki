@@ -1,8 +1,8 @@
 use std::path::Path;
 use tempfile::TempDir;
+use tsugiki::dom::{Attributes, NodeRef, QualName, QuirksMode, local_name, ns};
 use tsugiki::select::SelectorSet;
 use tsugiki::traits::*;
-use tsugiki::{Attributes, NodeRef, QualName, QuirksMode, local_name, ns};
 use tsugiki::{parse_fragment, parse_html};
 
 #[test]

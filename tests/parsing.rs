@@ -1,4 +1,5 @@
-use tsugiki::{NodeRef, QuirksMode, parse_html};
+use tsugiki::dom::{NodeRef, QuirksMode};
+use tsugiki::parse_html;
 
 #[test]
 fn test_default_document_quirks() {
