@@ -8,7 +8,7 @@ authors = [
 ]
 license = "MIT"
 description = "(接ぎ木) HTML tree manipulation library"
-repository = "https://github.com/brave/kuchikiki"
+repository = "https://github.com/Lymia/tsugiki"
 edition = "2024"
 
 [lib]
